@@ -1,0 +1,383 @@
+Authentication and authorization.
+
+We'll implement registration/login, password hashing, JWT-based authentication, HTTP-only cookies, protected routes, and business/user context. This will replace the temporary hardcoded demo IDs in your controllers.
+
+Authentication and Authorization
+We'll implement these features in sequence:
+1. Database schema verification.
+2. User registration.
+3. Password hashing using bcryptjs.
+4. User login and JWT generation.
+5. HTTP-only cookie-based authentication.
+6. Authentication middleware.
+7. Protected API routes.
+8. Business and user authorization.
+9. Logout and session validation.
+10. Postman security testing.
+
+erify the authentication database schema
+
+SELECT
+    table_name,
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name IN (
+      'auth_users_biz_agent',
+      'auth_roles_biz_agent',
+      'biz_businesses_biz_agent'
+  )
+ORDER BY table_name, ordinal_position;
+
+
+[{
+  "table_name": "auth_roles_biz_agent",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "table_name": "auth_roles_biz_agent",
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_roles_biz_agent",
+  "column_name": "role_name",
+  "data_type": "character varying",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_roles_biz_agent",
+  "column_name": "description",
+  "data_type": "text",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "auth_roles_biz_agent",
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "role_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "full_name",
+  "data_type": "character varying",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "email",
+  "data_type": "character varying",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "password_hash",
+  "data_type": "text",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "is_active",
+  "data_type": "boolean",
+  "is_nullable": "YES",
+  "column_default": "true"
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "last_login_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "auth_users_biz_agent",
+  "column_name": "updated_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "business_name",
+  "data_type": "character varying",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "business_type",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": "'Electronics E-Commerce'::character varying"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "email",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "phone",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "address",
+  "data_type": "text",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "currency",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": "'INR'::character varying"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "tax_number",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "is_active",
+  "data_type": "boolean",
+  "is_nullable": "YES",
+  "column_default": "true"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "column_name": "updated_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}]
+
+Database schema verification completed
+Your existing tables provide:
+Table	Important columns	Purpose
+auth_users_biz_agent	id, business_id, role_id, full_name, email, password_hash, is_active	User authentication
+auth_roles_biz_agent	id, business_id, role_name, description	Role-based authorization
+biz_businesses_biz_agent	id, business_name, is_active	Business ownership and access
+
+The authentication flow will be:
+User Login
+Email and password
+
+Verify Password
+bcryptjs compares password with password_hash
+
+Generate JWT
+Contains authenticated user and business identity
+
+HTTP-only Cookie
+Browser sends the token with protected requests
+
+Protected APIs
+Middleware verifies user, business and permissions
+
+Verify existing user roles
+
+SELECT
+    r.id AS role_id,
+    r.business_id,
+    b.business_name,
+    r.role_name,
+    r.description
+FROM auth_roles_biz_agent r
+INNER JOIN biz_businesses_biz_agent b
+    ON b.id = r.business_id
+ORDER BY r.role_name;
+
+[{
+  "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "business_name": "Demo Electronics Store",
+  "role_name": "Admin",
+  "description": "Full business administration"
+}, {
+  "role_id": "199a9c3e-eba6-4505-8fbf-e2cae1db746b",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "business_name": "Demo Electronics Store",
+  "role_name": "Manager",
+  "description": "Business operations and analytics"
+}, {
+  "role_id": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "business_name": "Demo Electronics Store",
+  "role_name": "Staff",
+  "description": "Daily sales and inventory operations"
+}]
+
+
+Verify the existing user accounts
+Before building login, let's inspect the four existing demo users and their assigned roles.
+
+Run this SQL in Neon:
+SELECT
+    u.id AS user_id,
+    u.full_name,
+    u.email,
+    u.business_id,
+    r.role_name,
+    u.is_active,
+    u.last_login_at
+FROM auth_users_biz_agent u
+INNER JOIN auth_roles_biz_agent r
+    ON r.id = u.role_id
+   AND r.business_id = u.business_id
+ORDER BY u.created_at;
+
+
+[{
+  "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+  "full_name": "Demo Administrator",
+  "email": "admin@demo-electronics.local",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "role_name": "Admin",
+  "is_active": true,
+  "last_login_at": null
+}, {
+  "user_id": "3b43e315-5954-457b-bc62-8a558f1c478e",
+  "full_name": "Demo Manager",
+  "email": "manager@demo-electronics.local",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "role_name": "Manager",
+  "is_active": true,
+  "last_login_at": null
+}, {
+  "user_id": "9f9d7d19-e03f-4677-a646-ce48102be506",
+  "full_name": "Sales Executive",
+  "email": "sales@demo-electronics.local",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "role_name": "Staff",
+  "is_active": true,
+  "last_login_at": null
+}, {
+  "user_id": "b695b92a-adcc-46c4-a052-26ba39417282",
+  "full_name": "Inventory Executive",
+  "email": "inventory@demo-electronics.local",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "role_name": "Staff",
+  "is_active": true,
+  "last_login_at": null
+}]
+
+
+
+Authentication repository
+Before implementing login, let's inspect your existing database query utility and repository conventions. We already know dbQuery() and your repository pattern, so we'll follow them.
+
+Create a new file:
+
+backend/src/repositories/auth.repository.ts
+
+
+est administrator login in Postman
+Start your backend:
+npm run dev
+
+
+In Postman, create this request:
+POST
+Administrator Login
+
+http://localhost:5000/api/auth/login
+
+Body → raw → JSON
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+SELECT
+    email,
+    last_login_at
+FROM auth_users_biz_agent
+WHERE email = 'admin@demo-electronics.local';
+
+[{
+  "email": "admin@demo-electronics.local",
+  "last_login_at": "2026-11-14 03:47:37.618015+00"
+}]
+
+Your administrator's last_login_at timestamp has been updated successfully.
+
+This confirms that:
+1. Login credentials were verified.
+2. User details and role were retrieved.
+3. JWT generation completed.
+4. Last successful login was recorded in NeonDB.
+Step 4.10 – Login testing results
+Test	Result
+Administrator login	Passed
+Password verification	Passed
+User and business identification	Passed
+Role identification	Passed
+Last login timestamp	Passed
+
+
+access_token
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiYmE2NTc0ZC02YWVjLTQxNjUtOTIxMS0zODk0YTdhZmFjYzQiLCJidXNpbmVzc0lkIjoiZGViM2FmZmUtNDQ2OC00Yzc1LTkxMjUtMTg3Mzc2ZjFiMGY5Iiwicm9sZUlkIjoiMDg4MTZlNDEtNzY1My00MjNiLWJhMGItNGQ3ZWZhZWRiZjI2Iiwicm9sZU5hbWUiOiJBZG1pbiIsImlhdCI6MTc5NDYyODA1NSwiZXhwIjoxNzk0NzE0NDU1fQ.BfiF_RSVH9nX7rqQbka519qyrOm60h4kjdzAWuMxmB4
+
+Cookie verification
+You mentioned that Postman displayed access_token. That confirms the cookie exists, but the copied token itself does not establish whether HttpOnly is enabled.
+
+In Postman, inspect the cookie properties and verify:
+- HttpOnly: true
+- Secure: false for your current localhost HTTP development setup
+- SameSite: Lax
+
+

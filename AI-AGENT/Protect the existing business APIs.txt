@@ -1,0 +1,3457 @@
+
+POST http://localhost:5000/api/auth/login
+{
+  "email": "manager@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "email": "sales@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+Protect the existing business APIs
+
+We have secured the AI Agent conversation routes. However, your existing business and analytics APIs are not yet protected by authentication.
+
+Next, we'll review app.ts and organize the routes so that:
+- Public routes: health checks and login.
+- Protected routes: businesses, products, customers, orders, inventory, expenses, purchases and analytics.
+- Role-based restrictions: Admin, Manager and Staff.
+We'll also ensure the authenticated businessId is used rather than trusting a business ID supplied by the frontend.
+
+Our intended structure:
+Public routes
+- /api/health
+- /api/database/health
+- /api/auth/login
+
+Authentication middleware
+Protected routes
+- Businesses and categories
+- Products and customers
+- Sales and purchases
+- Inventory and expenses
+- Payments and refunds
+- All analytics APIs
+- AI Agent APIs
+
+Test public and protected endpoints
+Let's verify that Express is applying authentication in the correct order.
+
+Start or restart your backend:
+
+
+Test 1 – Public health endpoint
+GET http://localhost:5000/api/health
+
+{
+  "success": true,
+  "message": "AI Business Assistant API is running!"
+}
+
+Expected: HTTP 200 OK.
+Test 2 – Public database health endpoint
+GET http://localhost:5000/api/database/health
+
+{
+  "success": true,
+  "message": "Database connection is healthy",
+  "database": "neondb",
+  "serverTime": "2026-11-14T04:20:05.950Z"
+}
+
+Expected: HTTP 200 OK.
+Test 3 – Protected products endpoint without login
+First remove the access_token cookie.
+
+GET http://localhost:5000/api/products
+{
+  "success": false,
+  "message": "Valid businessId query parameter is required"
+}
+
+Login through Postman
+Send:
+
+POST http://localhost:5000/api/auth/login
+
+Body → raw → JSON:
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+GET http://localhost:5000/api/products
+GET http://localhost:5000/api/products?businessId=deb3affe-4468-4c75-9125-187376f1b0f9
+
+{
+  "success": true,
+  "count": 50,
+  "data": [
+    {
+      "id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "65W Fast Charger",
+      "sku": "ACC005",
+      "brand": "Anker",
+      "model_number": "C65",
+      "description": "Fast charging adapter",
+      "unit_price": "2499.00",
+      "unit_cost": "1600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "66c1a5a5-83af-4947-83f9-f1d88500c096",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Apple AirPods Pro",
+      "sku": "AUD005",
+      "brand": "Apple",
+      "model_number": "APP3",
+      "description": "Wireless earbuds",
+      "unit_price": "24999.00",
+      "unit_cost": "19500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "310d7a42-afe3-4172-9c58-72ac7581f7bc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Apple MacBook Air",
+      "sku": "LAP007",
+      "brand": "Apple",
+      "model_number": "MBA",
+      "description": "Apple laptop",
+      "unit_price": "109999.00",
+      "unit_cost": "92000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "00be58dd-90fa-4b15-93fa-83c1f2f59641",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Asus Vivobook 16",
+      "sku": "LAP008",
+      "brand": "Asus",
+      "model_number": "VB16",
+      "description": "Everyday laptop",
+      "unit_price": "57999.00",
+      "unit_cost": "46000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7e55fa50-6c66-46df-b0a4-68e0e5bae3d3",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Boat Airdopes",
+      "sku": "AUD004",
+      "brand": "Boat",
+      "model_number": "AD450",
+      "description": "Wireless earbuds",
+      "unit_price": "2499.00",
+      "unit_cost": "1400.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Bose Soundbar",
+      "sku": "AUD003",
+      "brand": "Bose",
+      "model_number": "SB900",
+      "description": "Premium soundbar",
+      "unit_price": "49999.00",
+      "unit_cost": "39000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7daaa860-8423-43f0-84cc-86f329941235",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Canon EOS R50",
+      "sku": "CAM001",
+      "brand": "Canon",
+      "model_number": "EOSR50",
+      "description": "Mirrorless digital camera",
+      "unit_price": "74999.00",
+      "unit_cost": "60000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7000b92c-2aba-4d05-a0fc-92bb5257f632",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Crucial 2TB SSD",
+      "sku": "STR004",
+      "brand": "Crucial",
+      "model_number": "C2TB",
+      "description": "Internal SSD",
+      "unit_price": "13999.00",
+      "unit_cost": "10500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d5b9003e-4feb-4d19-820a-4f05f933fcf7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "D Link Gigabit Router",
+      "sku": "NET002",
+      "brand": "D-Link",
+      "model_number": "DIR825",
+      "description": "Wireless router",
+      "unit_price": "2999.00",
+      "unit_cost": "1900.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e4f089ea-2807-47a5-b3a7-582ca463524d",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Dell Inspiron 15",
+      "sku": "LAP001",
+      "brand": "Dell",
+      "model_number": "INS15",
+      "description": "15 inch laptop",
+      "unit_price": "65999.00",
+      "unit_cost": "54000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Dell XPS 14",
+      "sku": "LAP002",
+      "brand": "Dell",
+      "model_number": "XPS14",
+      "description": "Premium laptop",
+      "unit_price": "149999.00",
+      "unit_cost": "125000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "1021c703-1236-4598-a027-85be362cf6ad",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "GoPro Hero",
+      "sku": "CAM005",
+      "brand": "GoPro",
+      "model_number": "HERO",
+      "description": "Action camera",
+      "unit_price": "39999.00",
+      "unit_cost": "31000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "81c69f10-8054-44a2-b8c9-2768858daa5d",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Google Pixel 11",
+      "sku": "MOB008",
+      "brand": "Google",
+      "model_number": "P11",
+      "description": "Google smartphone",
+      "unit_price": "74999.00",
+      "unit_cost": "61000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b436035a-373b-4eb8-bf41-904bacb2e1fc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "HDMI Cable",
+      "sku": "ACC006",
+      "brand": "Amazon Basics",
+      "model_number": "HDMI2",
+      "description": "High speed HDMI cable",
+      "unit_price": "599.00",
+      "unit_cost": "250.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b6c6f00a-9d05-4e45-803f-12d326062d3c",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "HP Pavilion 15",
+      "sku": "LAP003",
+      "brand": "HP",
+      "model_number": "PAV15",
+      "description": "Everyday laptop",
+      "unit_price": "62999.00",
+      "unit_cost": "51000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7542576e-7f55-45fe-8b92-f50a3d96e41e",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "HP Spectre x360",
+      "sku": "LAP004",
+      "brand": "HP",
+      "model_number": "SPX360",
+      "description": "Convertible laptop",
+      "unit_price": "139999.00",
+      "unit_cost": "115000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d0b635aa-373a-41e3-94c9-d79073c482ed",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "JBL Bluetooth Speaker",
+      "sku": "AUD002",
+      "brand": "JBL",
+      "model_number": "FLIP",
+      "description": "Portable speaker",
+      "unit_price": "9999.00",
+      "unit_cost": "6500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f254157f-0710-454c-b0be-544484a8fcc0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "JBL Party Speaker",
+      "sku": "AUD006",
+      "brand": "JBL",
+      "model_number": "PARTY",
+      "description": "Portable party speaker",
+      "unit_price": "18999.00",
+      "unit_cost": "14000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "75c9fbc5-2606-4c9e-9edd-24bd37c15d8e",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "LG 43 inch LED TV",
+      "sku": "TV003",
+      "brand": "LG",
+      "model_number": "L43",
+      "description": "LED television",
+      "unit_price": "39999.00",
+      "unit_cost": "32000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "88409d49-40c8-47d4-8c6c-17062d4b0a26",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "LG 55 inch OLED TV",
+      "sku": "TV004",
+      "brand": "LG",
+      "model_number": "O55",
+      "description": "OLED television",
+      "unit_price": "129999.00",
+      "unit_cost": "108000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f4f3f1e4-d9c1-47b6-af37-2a1acc634e63",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Laptop Backpack",
+      "sku": "ACC007",
+      "brand": "HP",
+      "model_number": "BAG15",
+      "description": "Laptop backpack",
+      "unit_price": "1999.00",
+      "unit_cost": "1100.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "0e9a6a6f-c71b-4a16-9f00-c6d2b455d07a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Laptop Cooling Pad",
+      "sku": "ACC004",
+      "brand": "Zebronics",
+      "model_number": "CP01",
+      "description": "Cooling pad",
+      "unit_price": "1299.00",
+      "unit_cost": "750.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e6627828-45d4-4340-acb2-4c0a5362ce78",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Lenovo IdeaPad Slim 5",
+      "sku": "LAP005",
+      "brand": "Lenovo",
+      "model_number": "IPS5",
+      "description": "Slim laptop",
+      "unit_price": "69999.00",
+      "unit_cost": "56000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "a600fcec-4c61-4da1-9823-bdb964d87d3b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Lenovo ThinkPad E14",
+      "sku": "LAP006",
+      "brand": "Lenovo",
+      "model_number": "TPE14",
+      "description": "Business laptop",
+      "unit_price": "84999.00",
+      "unit_cost": "70000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "10241412-0dcf-47eb-ad6e-31b1c041b8e5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Logitech C920 Webcam",
+      "sku": "CAM004",
+      "brand": "Logitech",
+      "model_number": "C920",
+      "description": "Full HD webcam",
+      "unit_price": "6999.00",
+      "unit_cost": "4500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b450e0b6-3d43-44a4-9c65-fb2b846d801c",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Mechanical Keyboard",
+      "sku": "ACC003",
+      "brand": "Redragon",
+      "model_number": "K552",
+      "description": "Gaming keyboard",
+      "unit_price": "3499.00",
+      "unit_cost": "2200.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "cc319406-4911-4687-a8ab-39f4f5b35ce7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "Netgear Mesh WiFi",
+      "sku": "NET003",
+      "brand": "Netgear",
+      "model_number": "MESH2",
+      "description": "Mesh networking system",
+      "unit_price": "12999.00",
+      "unit_cost": "9500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "16158e82-32c6-47e8-9a10-a14e842ff641",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Nikon Z50",
+      "sku": "CAM003",
+      "brand": "Nikon",
+      "model_number": "Z50",
+      "description": "Mirrorless camera",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "96758ede-4021-4eff-a5fc-db3ac2fc2e2a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "OnePlus 14",
+      "sku": "MOB005",
+      "brand": "OnePlus",
+      "model_number": "OP14",
+      "description": "Flagship smartphone",
+      "unit_price": "69999.00",
+      "unit_cost": "57000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "607674f3-314d-44ee-ab53-0c468582483a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "OnePlus Nord 6",
+      "sku": "MOB006",
+      "brand": "OnePlus",
+      "model_number": "N6",
+      "description": "Mid-range smartphone",
+      "unit_price": "32999.00",
+      "unit_cost": "26000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "caa2e7df-ee46-4a1e-b2b3-3bc83c6099a1",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Redmi Note 15",
+      "sku": "MOB007",
+      "brand": "Xiaomi",
+      "model_number": "RN15",
+      "description": "Android smartphone",
+      "unit_price": "18999.00",
+      "unit_cost": "14500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Samsung 1TB SSD",
+      "sku": "STR001",
+      "brand": "Samsung",
+      "model_number": "SSD1TB",
+      "description": "Internal SSD",
+      "unit_price": "8999.00",
+      "unit_cost": "6500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "4fb021cf-2872-4cb8-9f9b-a8e1e0515dcd",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Samsung 43 inch Smart TV",
+      "sku": "TV001",
+      "brand": "Samsung",
+      "model_number": "TU43",
+      "description": "4K Smart TV",
+      "unit_price": "42999.00",
+      "unit_cost": "34000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d1bc5452-2ca6-4819-8859-bd658639e63f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Samsung 55 inch QLED TV",
+      "sku": "TV002",
+      "brand": "Samsung",
+      "model_number": "Q55",
+      "description": "QLED television",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "4c073ba3-2d96-4a67-b5ae-07bc90c704c5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Samsung Galaxy A56",
+      "sku": "MOB002",
+      "brand": "Samsung",
+      "model_number": "A56",
+      "description": "Mid-range smartphone",
+      "unit_price": "39999.00",
+      "unit_cost": "32000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "5a447ed7-5fb5-4e6c-a70a-fc93f2975659",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Samsung Galaxy S26",
+      "sku": "MOB001",
+      "brand": "Samsung",
+      "model_number": "S26",
+      "description": "5G smartphone",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "2f2bba5d-3ff9-4ad4-823b-da9c1e29dd71",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "SanDisk 128GB Pen Drive",
+      "sku": "STR003",
+      "brand": "SanDisk",
+      "model_number": "PD128",
+      "description": "USB storage device",
+      "unit_price": "899.00",
+      "unit_cost": "450.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3f05d4b6-4569-4aab-baaf-cd2cd7b26ba0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Seagate 4TB HDD",
+      "sku": "STR005",
+      "brand": "Seagate",
+      "model_number": "SG4TB",
+      "description": "External hard drive",
+      "unit_price": "9999.00",
+      "unit_cost": "7500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3a69730b-5b10-4d78-9a29-002c8d1027b7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Sony Alpha A6400",
+      "sku": "CAM002",
+      "brand": "Sony",
+      "model_number": "A6400",
+      "description": "Mirrorless camera",
+      "unit_price": "89999.00",
+      "unit_cost": "73000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f9ba684d-5c14-4edc-951b-00678ea544ed",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Sony Bravia 50 inch",
+      "sku": "TV005",
+      "brand": "Sony",
+      "model_number": "BR50",
+      "description": "4K television",
+      "unit_price": "74999.00",
+      "unit_cost": "61000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e63e7c30-107c-4fbb-bf76-cd4bb5e8c450",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Sony Wireless Headphones",
+      "sku": "AUD001",
+      "brand": "Sony",
+      "model_number": "WH1000",
+      "description": "Noise cancelling headphones",
+      "unit_price": "24999.00",
+      "unit_cost": "18500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "TCL 43 inch Smart TV",
+      "sku": "TV006",
+      "brand": "TCL",
+      "model_number": "T43",
+      "description": "Smart television",
+      "unit_price": "32999.00",
+      "unit_cost": "26000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "1c99cb6e-50b1-4fc5-ada6-400b5ee1a700",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link 8 Port Switch",
+      "sku": "NET004",
+      "brand": "TP-Link",
+      "model_number": "SW8",
+      "description": "Gigabit network switch",
+      "unit_price": "2499.00",
+      "unit_cost": "1500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e3126681-b6cc-471a-b9b9-d0d8ab936c61",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link WiFi 6 Router",
+      "sku": "NET001",
+      "brand": "TP-Link",
+      "model_number": "AX1500",
+      "description": "WiFi 6 router",
+      "unit_price": "3999.00",
+      "unit_cost": "2600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "8c46e6bf-1c65-4a95-9c50-7be91a60f552",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link WiFi Adapter",
+      "sku": "NET005",
+      "brand": "TP-Link",
+      "model_number": "WA1200",
+      "description": "USB WiFi adapter",
+      "unit_price": "1299.00",
+      "unit_cost": "700.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "USB C Cable",
+      "sku": "ACC001",
+      "brand": "Portronics",
+      "model_number": "UC01",
+      "description": "USB C charging cable",
+      "unit_price": "499.00",
+      "unit_cost": "180.00",
+      "reorder_level": 30,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "37299ff5-73c3-43d1-8ebe-bbbde827a8bc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "WD 2TB External HDD",
+      "sku": "STR002",
+      "brand": "Western Digital",
+      "model_number": "HDD2TB",
+      "description": "External hard drive",
+      "unit_price": "6499.00",
+      "unit_cost": "4700.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3ec0c355-ac08-4896-9426-8c6d89f4fe34",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Wireless Mouse",
+      "sku": "ACC002",
+      "brand": "Logitech",
+      "model_number": "M185",
+      "description": "Wireless mouse",
+      "unit_price": "899.00",
+      "unit_cost": "500.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f0d8ae37-0d8f-4323-b552-f380731d92d7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "iPhone 17",
+      "sku": "MOB003",
+      "brand": "Apple",
+      "model_number": "IP17",
+      "description": "Apple smartphone",
+      "unit_price": "89999.00",
+      "unit_cost": "76000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "iPhone 17 Pro",
+      "sku": "MOB004",
+      "brand": "Apple",
+      "model_number": "IP17P",
+      "description": "Premium Apple smartphone",
+      "unit_price": "129999.00",
+      "unit_cost": "110000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    }
+  ]
+}
+
+Final authentication verification
+Now let's verify that an unauthenticated user cannot access these products.
+1. In Postman, remove the access_token cookie.
+2. Keep the same URL:
+GET http://localhost:5000/api/products?businessId=deb3affe-4468-4c75-9125-187376f1b0f9
+
+
+3. Send the request.
+
+Expected result: HTTP 401 Unauthorized.
+{
+  "success": false,
+  "message": "Authentication required. Please log in."
+}
+
+{
+  "success": false,
+  "message": "Authentication required. Please log in."
+}
+
+Test Products API
+Open Postman and ensure your Admin login cookie (access_token) is present.
+
+POST http://localhost:5000/api/auth/login
+
+Body → raw → JSON:
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+Test 1 – Get all products
+GET http://localhost:5000/api/products
+
+{
+  "success": true,
+  "count": 50,
+  "data": [
+    {
+      "id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "65W Fast Charger",
+      "sku": "ACC005",
+      "brand": "Anker",
+      "model_number": "C65",
+      "description": "Fast charging adapter",
+      "unit_price": "2499.00",
+      "unit_cost": "1600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "66c1a5a5-83af-4947-83f9-f1d88500c096",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Apple AirPods Pro",
+      "sku": "AUD005",
+      "brand": "Apple",
+      "model_number": "APP3",
+      "description": "Wireless earbuds",
+      "unit_price": "24999.00",
+      "unit_cost": "19500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "310d7a42-afe3-4172-9c58-72ac7581f7bc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Apple MacBook Air",
+      "sku": "LAP007",
+      "brand": "Apple",
+      "model_number": "MBA",
+      "description": "Apple laptop",
+      "unit_price": "109999.00",
+      "unit_cost": "92000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "00be58dd-90fa-4b15-93fa-83c1f2f59641",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Asus Vivobook 16",
+      "sku": "LAP008",
+      "brand": "Asus",
+      "model_number": "VB16",
+      "description": "Everyday laptop",
+      "unit_price": "57999.00",
+      "unit_cost": "46000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7e55fa50-6c66-46df-b0a4-68e0e5bae3d3",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Boat Airdopes",
+      "sku": "AUD004",
+      "brand": "Boat",
+      "model_number": "AD450",
+      "description": "Wireless earbuds",
+      "unit_price": "2499.00",
+      "unit_cost": "1400.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Bose Soundbar",
+      "sku": "AUD003",
+      "brand": "Bose",
+      "model_number": "SB900",
+      "description": "Premium soundbar",
+      "unit_price": "49999.00",
+      "unit_cost": "39000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7daaa860-8423-43f0-84cc-86f329941235",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Canon EOS R50",
+      "sku": "CAM001",
+      "brand": "Canon",
+      "model_number": "EOSR50",
+      "description": "Mirrorless digital camera",
+      "unit_price": "74999.00",
+      "unit_cost": "60000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7000b92c-2aba-4d05-a0fc-92bb5257f632",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Crucial 2TB SSD",
+      "sku": "STR004",
+      "brand": "Crucial",
+      "model_number": "C2TB",
+      "description": "Internal SSD",
+      "unit_price": "13999.00",
+      "unit_cost": "10500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d5b9003e-4feb-4d19-820a-4f05f933fcf7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "D Link Gigabit Router",
+      "sku": "NET002",
+      "brand": "D-Link",
+      "model_number": "DIR825",
+      "description": "Wireless router",
+      "unit_price": "2999.00",
+      "unit_cost": "1900.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e4f089ea-2807-47a5-b3a7-582ca463524d",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Dell Inspiron 15",
+      "sku": "LAP001",
+      "brand": "Dell",
+      "model_number": "INS15",
+      "description": "15 inch laptop",
+      "unit_price": "65999.00",
+      "unit_cost": "54000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Dell XPS 14",
+      "sku": "LAP002",
+      "brand": "Dell",
+      "model_number": "XPS14",
+      "description": "Premium laptop",
+      "unit_price": "149999.00",
+      "unit_cost": "125000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "1021c703-1236-4598-a027-85be362cf6ad",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "GoPro Hero",
+      "sku": "CAM005",
+      "brand": "GoPro",
+      "model_number": "HERO",
+      "description": "Action camera",
+      "unit_price": "39999.00",
+      "unit_cost": "31000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "81c69f10-8054-44a2-b8c9-2768858daa5d",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Google Pixel 11",
+      "sku": "MOB008",
+      "brand": "Google",
+      "model_number": "P11",
+      "description": "Google smartphone",
+      "unit_price": "74999.00",
+      "unit_cost": "61000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b436035a-373b-4eb8-bf41-904bacb2e1fc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "HDMI Cable",
+      "sku": "ACC006",
+      "brand": "Amazon Basics",
+      "model_number": "HDMI2",
+      "description": "High speed HDMI cable",
+      "unit_price": "599.00",
+      "unit_cost": "250.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b6c6f00a-9d05-4e45-803f-12d326062d3c",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "HP Pavilion 15",
+      "sku": "LAP003",
+      "brand": "HP",
+      "model_number": "PAV15",
+      "description": "Everyday laptop",
+      "unit_price": "62999.00",
+      "unit_cost": "51000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7542576e-7f55-45fe-8b92-f50a3d96e41e",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "HP Spectre x360",
+      "sku": "LAP004",
+      "brand": "HP",
+      "model_number": "SPX360",
+      "description": "Convertible laptop",
+      "unit_price": "139999.00",
+      "unit_cost": "115000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d0b635aa-373a-41e3-94c9-d79073c482ed",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "JBL Bluetooth Speaker",
+      "sku": "AUD002",
+      "brand": "JBL",
+      "model_number": "FLIP",
+      "description": "Portable speaker",
+      "unit_price": "9999.00",
+      "unit_cost": "6500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f254157f-0710-454c-b0be-544484a8fcc0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "JBL Party Speaker",
+      "sku": "AUD006",
+      "brand": "JBL",
+      "model_number": "PARTY",
+      "description": "Portable party speaker",
+      "unit_price": "18999.00",
+      "unit_cost": "14000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "75c9fbc5-2606-4c9e-9edd-24bd37c15d8e",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "LG 43 inch LED TV",
+      "sku": "TV003",
+      "brand": "LG",
+      "model_number": "L43",
+      "description": "LED television",
+      "unit_price": "39999.00",
+      "unit_cost": "32000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "88409d49-40c8-47d4-8c6c-17062d4b0a26",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "LG 55 inch OLED TV",
+      "sku": "TV004",
+      "brand": "LG",
+      "model_number": "O55",
+      "description": "OLED television",
+      "unit_price": "129999.00",
+      "unit_cost": "108000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f4f3f1e4-d9c1-47b6-af37-2a1acc634e63",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Laptop Backpack",
+      "sku": "ACC007",
+      "brand": "HP",
+      "model_number": "BAG15",
+      "description": "Laptop backpack",
+      "unit_price": "1999.00",
+      "unit_cost": "1100.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "0e9a6a6f-c71b-4a16-9f00-c6d2b455d07a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Laptop Cooling Pad",
+      "sku": "ACC004",
+      "brand": "Zebronics",
+      "model_number": "CP01",
+      "description": "Cooling pad",
+      "unit_price": "1299.00",
+      "unit_cost": "750.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e6627828-45d4-4340-acb2-4c0a5362ce78",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Lenovo IdeaPad Slim 5",
+      "sku": "LAP005",
+      "brand": "Lenovo",
+      "model_number": "IPS5",
+      "description": "Slim laptop",
+      "unit_price": "69999.00",
+      "unit_cost": "56000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "a600fcec-4c61-4da1-9823-bdb964d87d3b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "product_name": "Lenovo ThinkPad E14",
+      "sku": "LAP006",
+      "brand": "Lenovo",
+      "model_number": "TPE14",
+      "description": "Business laptop",
+      "unit_price": "84999.00",
+      "unit_cost": "70000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "10241412-0dcf-47eb-ad6e-31b1c041b8e5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Logitech C920 Webcam",
+      "sku": "CAM004",
+      "brand": "Logitech",
+      "model_number": "C920",
+      "description": "Full HD webcam",
+      "unit_price": "6999.00",
+      "unit_cost": "4500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "b450e0b6-3d43-44a4-9c65-fb2b846d801c",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Mechanical Keyboard",
+      "sku": "ACC003",
+      "brand": "Redragon",
+      "model_number": "K552",
+      "description": "Gaming keyboard",
+      "unit_price": "3499.00",
+      "unit_cost": "2200.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "cc319406-4911-4687-a8ab-39f4f5b35ce7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "Netgear Mesh WiFi",
+      "sku": "NET003",
+      "brand": "Netgear",
+      "model_number": "MESH2",
+      "description": "Mesh networking system",
+      "unit_price": "12999.00",
+      "unit_cost": "9500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "16158e82-32c6-47e8-9a10-a14e842ff641",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Nikon Z50",
+      "sku": "CAM003",
+      "brand": "Nikon",
+      "model_number": "Z50",
+      "description": "Mirrorless camera",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "96758ede-4021-4eff-a5fc-db3ac2fc2e2a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "OnePlus 14",
+      "sku": "MOB005",
+      "brand": "OnePlus",
+      "model_number": "OP14",
+      "description": "Flagship smartphone",
+      "unit_price": "69999.00",
+      "unit_cost": "57000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "607674f3-314d-44ee-ab53-0c468582483a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "OnePlus Nord 6",
+      "sku": "MOB006",
+      "brand": "OnePlus",
+      "model_number": "N6",
+      "description": "Mid-range smartphone",
+      "unit_price": "32999.00",
+      "unit_cost": "26000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "caa2e7df-ee46-4a1e-b2b3-3bc83c6099a1",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Redmi Note 15",
+      "sku": "MOB007",
+      "brand": "Xiaomi",
+      "model_number": "RN15",
+      "description": "Android smartphone",
+      "unit_price": "18999.00",
+      "unit_cost": "14500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Samsung 1TB SSD",
+      "sku": "STR001",
+      "brand": "Samsung",
+      "model_number": "SSD1TB",
+      "description": "Internal SSD",
+      "unit_price": "8999.00",
+      "unit_cost": "6500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "4fb021cf-2872-4cb8-9f9b-a8e1e0515dcd",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Samsung 43 inch Smart TV",
+      "sku": "TV001",
+      "brand": "Samsung",
+      "model_number": "TU43",
+      "description": "4K Smart TV",
+      "unit_price": "42999.00",
+      "unit_cost": "34000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "d1bc5452-2ca6-4819-8859-bd658639e63f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Samsung 55 inch QLED TV",
+      "sku": "TV002",
+      "brand": "Samsung",
+      "model_number": "Q55",
+      "description": "QLED television",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "4c073ba3-2d96-4a67-b5ae-07bc90c704c5",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Samsung Galaxy A56",
+      "sku": "MOB002",
+      "brand": "Samsung",
+      "model_number": "A56",
+      "description": "Mid-range smartphone",
+      "unit_price": "39999.00",
+      "unit_cost": "32000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "5a447ed7-5fb5-4e6c-a70a-fc93f2975659",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "Samsung Galaxy S26",
+      "sku": "MOB001",
+      "brand": "Samsung",
+      "model_number": "S26",
+      "description": "5G smartphone",
+      "unit_price": "79999.00",
+      "unit_cost": "65000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "2f2bba5d-3ff9-4ad4-823b-da9c1e29dd71",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "SanDisk 128GB Pen Drive",
+      "sku": "STR003",
+      "brand": "SanDisk",
+      "model_number": "PD128",
+      "description": "USB storage device",
+      "unit_price": "899.00",
+      "unit_cost": "450.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3f05d4b6-4569-4aab-baaf-cd2cd7b26ba0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "Seagate 4TB HDD",
+      "sku": "STR005",
+      "brand": "Seagate",
+      "model_number": "SG4TB",
+      "description": "External hard drive",
+      "unit_price": "9999.00",
+      "unit_cost": "7500.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3a69730b-5b10-4d78-9a29-002c8d1027b7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "product_name": "Sony Alpha A6400",
+      "sku": "CAM002",
+      "brand": "Sony",
+      "model_number": "A6400",
+      "description": "Mirrorless camera",
+      "unit_price": "89999.00",
+      "unit_cost": "73000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f9ba684d-5c14-4edc-951b-00678ea544ed",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "Sony Bravia 50 inch",
+      "sku": "TV005",
+      "brand": "Sony",
+      "model_number": "BR50",
+      "description": "4K television",
+      "unit_price": "74999.00",
+      "unit_cost": "61000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e63e7c30-107c-4fbb-bf76-cd4bb5e8c450",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "product_name": "Sony Wireless Headphones",
+      "sku": "AUD001",
+      "brand": "Sony",
+      "model_number": "WH1000",
+      "description": "Noise cancelling headphones",
+      "unit_price": "24999.00",
+      "unit_cost": "18500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "product_name": "TCL 43 inch Smart TV",
+      "sku": "TV006",
+      "brand": "TCL",
+      "model_number": "T43",
+      "description": "Smart television",
+      "unit_price": "32999.00",
+      "unit_cost": "26000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "1c99cb6e-50b1-4fc5-ada6-400b5ee1a700",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link 8 Port Switch",
+      "sku": "NET004",
+      "brand": "TP-Link",
+      "model_number": "SW8",
+      "description": "Gigabit network switch",
+      "unit_price": "2499.00",
+      "unit_cost": "1500.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "e3126681-b6cc-471a-b9b9-d0d8ab936c61",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link WiFi 6 Router",
+      "sku": "NET001",
+      "brand": "TP-Link",
+      "model_number": "AX1500",
+      "description": "WiFi 6 router",
+      "unit_price": "3999.00",
+      "unit_cost": "2600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "8c46e6bf-1c65-4a95-9c50-7be91a60f552",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "product_name": "TP Link WiFi Adapter",
+      "sku": "NET005",
+      "brand": "TP-Link",
+      "model_number": "WA1200",
+      "description": "USB WiFi adapter",
+      "unit_price": "1299.00",
+      "unit_cost": "700.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "USB C Cable",
+      "sku": "ACC001",
+      "brand": "Portronics",
+      "model_number": "UC01",
+      "description": "USB C charging cable",
+      "unit_price": "499.00",
+      "unit_cost": "180.00",
+      "reorder_level": 30,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "37299ff5-73c3-43d1-8ebe-bbbde827a8bc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "product_name": "WD 2TB External HDD",
+      "sku": "STR002",
+      "brand": "Western Digital",
+      "model_number": "HDD2TB",
+      "description": "External hard drive",
+      "unit_price": "6499.00",
+      "unit_cost": "4700.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "3ec0c355-ac08-4896-9426-8c6d89f4fe34",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "Wireless Mouse",
+      "sku": "ACC002",
+      "brand": "Logitech",
+      "model_number": "M185",
+      "description": "Wireless mouse",
+      "unit_price": "899.00",
+      "unit_cost": "500.00",
+      "reorder_level": 20,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "f0d8ae37-0d8f-4323-b552-f380731d92d7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "iPhone 17",
+      "sku": "MOB003",
+      "brand": "Apple",
+      "model_number": "IP17",
+      "description": "Apple smartphone",
+      "unit_price": "89999.00",
+      "unit_cost": "76000.00",
+      "reorder_level": 5,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+    {
+      "id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "product_name": "iPhone 17 Pro",
+      "sku": "MOB004",
+      "brand": "Apple",
+      "model_number": "IP17P",
+      "description": "Premium Apple smartphone",
+      "unit_price": "129999.00",
+      "unit_cost": "110000.00",
+      "reorder_level": 3,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    }
+  ]
+}
+
+est one product
+Now let's verify the individual product endpoint.
+
+In Postman, send:
+GET http://localhost:5000/api/products/36eb68a0-28b4-4c01-ab38-c61de64972aa
+
+{
+  "success": true,
+  "data": {
+    "id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+    "product_name": "65W Fast Charger",
+    "sku": "ACC005",
+    "brand": "Anker",
+    "model_number": "C65",
+    "description": "Fast charging adapter",
+    "unit_price": "2499.00",
+    "unit_cost": "1600.00",
+    "reorder_level": 10,
+    "is_active": true,
+    "created_at": "2026-11-13T07:28:14.967Z",
+    "updated_at": "2026-11-13T07:28:14.967Z"
+  }
+}
+
+Test Categories API in Postman
+First, test retrieving all categories.
+
+Request:
+GET http://localhost:5000/api/categories
+
+{
+  "success": true,
+  "count": 8,
+  "data": [
+    {
+      "id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Accessories",
+      "description": "Electronic accessories and cables",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Audio",
+      "description": "Headphones, speakers and audio devices",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Cameras",
+      "description": "Digital cameras and webcams",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Laptops",
+      "description": "Laptops and notebooks",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Mobiles",
+      "description": "Smartphones and mobile devices",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Networking",
+      "description": "Routers and networking equipment",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Storage",
+      "description": "Hard disks, SSDs and memory devices",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_name": "Televisions",
+      "description": "Smart TVs and LED televisions",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z"
+    }
+  ]
+}
+
+
+Test one category
+Now test the individual category endpoint.
+
+Postman request:
+GET http://localhost:5000/api/categories/487af5f0-6108-4652-b36e-cd6822a94aa0
+
+{
+  "success": true,
+  "data": {
+    "id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "category_name": "Accessories",
+    "description": "Electronic accessories and cables",
+    "is_active": true,
+    "created_at": "2026-11-13T07:25:41.385Z"
+  }
+}
+
+
+Test all Customers
+In Postman, send:
+GET http://localhost:5000/api/customers
+
+{
+  "success": true,
+  "count": 200,
+  "data": [
+    {
+      "id": "58e5223b-5ca4-4fff-9fa2-ce6350a9072f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "customer_name": "Customer 001",
+      "email": "customer1@example.com",
+      "phone": "+919000000001",
+      "address": "House No. 1, Main Road",
+      "city": "Visakhapatnam",
+      "state": "Andhra Pradesh",
+      "pincode": "530001",
+      "customer_type": "Premium",
+      "created_at": "2026-11-13T07:31:44.477Z",
+      "up
+	  
+	  Test one customer
+Use the first customer's ID:
+GET http://localhost:5000/api/customers/58e5223b-5ca4-4fff-9fa2-ce6350a9072f
+
+
+Keep your Admin login cookie enabled.
+
+{
+  "success": true,
+  "data": {
+    "id": "58e5223b-5ca4-4fff-9fa2-ce6350a9072f",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "customer_name": "Customer 001",
+    "email": "customer1@example.com",
+    "phone": "+919000000001",
+    "address": "House No. 1, Main Road",
+    "city": "Visakhapatnam",
+    "state": "Andhra Pradesh",
+    "pincode": "530001",
+    "customer_type": "Premium",
+    "created_at": "2026-11-13T07:31:44.477Z",
+    "updated_at": "2026-11-13T07:31:44.477Z"
+  }
+}
+
+Test all Vendors
+In Postman, send:
+GET http://localhost:5000/api/vendors
+
+{
+  "success": true,
+  "count": 15,
+  "data": [
+    {
+      "id": "78f5c724-5192-43ba-a89c-4c7c142fa139",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Apple Authorized Distributor",
+      "contact_person": "Amit Shah",
+      "email": "apple@example.com",
+      "phone": "9000000002",
+      "address": null,
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "63a3eb2b-42aa-4157-a597-291ce5c0a25a",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Boat Lifestyle Distribution",
+      "contact_person": "Rahul Verma",
+      "email": "boat@example.com",
+      "phone": "9000000015",
+      "address": null,
+      "city": "Gurugram",
+      "state": "Haryana",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "bdebe289-fa9b-4954-8ce8-966eaa4411d9",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Canon India Wholesale",
+      "contact_person": "Deepak Kumar",
+      "email": "canon@example.com",
+      "phone": "9000000013",
+      "address": null,
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "89eb75c2-3bfb-4309-b47e-049eac519f2f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Dell India Supplies",
+      "contact_person": "Ravi Kumar",
+      "email": "dell@example.com",
+      "phone": "9000000003",
+      "address": null,
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "bb226a23-5349-439b-9c60-a50a9273035b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "HP Electronics Distribution",
+      "contact_person": "Suresh Rao",
+      "email": "hp@example.com",
+      "phone": "9000000004",
+      "address": null,
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "b042cd24-d1e6-4830-a07b-1fa865123015",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "JBL Audio Distributors",
+      "contact_person": "Manoj Singh",
+      "email": "jbl@example.com",
+      "phone": "9000000008",
+      "address": null,
+      "city": "Delhi",
+      "state": "Delhi",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "7638f98b-722f-4089-b76f-ae52fec4aef2",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "LG Electronics Supplies",
+      "contact_person": "Arun Das",
+      "email": "lg@example.com",
+      "phone": "9000000007",
+      "address": null,
+      "city": "Chennai",
+      "state": "Tamil Nadu",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "c827ae1d-cc5f-4477-bfbc-b7c42550f3b1",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Lenovo Wholesale India",
+      "contact_person": "Kiran Reddy",
+      "email": "lenovo@example.com",
+      "phone": "9000000005",
+      "address": null,
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "40728b38-df0d-4efc-ac2c-362375d408c1",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Logitech India Wholesale",
+      "contact_person": "Prakash Rao",
+      "email": "logitech@example.com",
+      "phone": "9000000009",
+      "address": null,
+      "city": "Pune",
+      "state": "Maharashtra",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "c1bc07da-2943-41dc-809a-0a693ff94162",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Nikon Distribution India",
+      "contact_person": "Sanjay Rao",
+      "email": "nikon@example.com",
+      "phone": "9000000014",
+      "address": null,
+      "city": "Delhi",
+      "state": "Delhi",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "ca136edc-5d37-4d20-84e2-fcff9c6cf069",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Samsung Distribution India",
+      "contact_person": "Raj Kumar",
+      "email": "samsung@example.com",
+      "phone": "9000000001",
+      "address": null,
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "3b12e61d-aa1c-47e9-beb7-fee6c3a5aeda",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "SanDisk Distribution",
+      "contact_person": "Ramesh Babu",
+      "email": "sandisk@example.com",
+      "phone": "9000000012",
+      "address": null,
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "98b02168-4502-4b13-ae9d-e203ae193e4f",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Sony Electronics Wholesale",
+      "contact_person": "Vijay Kumar",
+      "email": "sony@example.com",
+      "phone": "9000000006",
+      "address": null,
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "1a9c397d-eec7-42ad-8af6-4be5b6622c39",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "TP Link Distribution",
+      "contact_person": "Naveen Kumar",
+      "email": "tplink@example.com",
+      "phone": "9000000010",
+      "address": null,
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    },
+    {
+      "id": "e3b9c35e-3cb1-4c59-b158-9d08f35ad4fc",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_name": "Western Digital Supplies",
+      "contact_person": "Anil Sharma",
+      "email": "wd@example.com",
+      "phone": "9000000011",
+      "address": null,
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    }
+  ]
+}
+
+est one vendor
+Let's test the first vendor, Apple Authorized Distributor.
+
+Postman request:
+GET http://localhost:5000/api/vendors/78f5c724-5192-43ba-a89c-4c7c142fa139
+
+{
+  "success": true,
+  "data": {
+    "id": "78f5c724-5192-43ba-a89c-4c7c142fa139",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "vendor_name": "Apple Authorized Distributor",
+    "contact_person": "Amit Shah",
+    "email": "apple@example.com",
+    "phone": "9000000002",
+    "address": null,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "is_active": true,
+    "created_at": "2026-11-13T07:25:41.385Z",
+    "updated_at": "2026-11-13T07:25:41.385Z"
+  }
+}
+
+Test all Inventory records
+In Postman, send:
+GET http://localhost:5000/api/inventory
+
+{
+  "success": true,
+  "count": 50,
+  "data": [
+    {
+      "id": "a2567ddb-d6b0-4895-b088-8a23131d4a83",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "00be58dd-90fa-4b15-93fa-83c1f2f59641",
+      "quantity_on_hand": 15,
+      "quantity_reserved": 0,
+      "quantity_available": 15,
+      "last_stock_update": "2026-11-13T07:45:45.297Z"
+    },
+	
+	Test inventory for one product
+Use the product_id from your response:
+GET http://localhost:5000/api/inventory/product/00be58dd-90fa-4b15-93fa-83c1f2f59641
+
+{
+  "success": true,
+  "data": {
+    "id": "a2567ddb-d6b0-4895-b088-8a23131d4a83",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "product_id": "00be58dd-90fa-4b15-93fa-83c1f2f59641",
+    "quantity_on_hand": 15,
+    "quantity_reserved": 0,
+    "quantity_available": 15,
+    "last_stock_update": "2026-11-13T07:45:45.297Z"
+  }
+}
+
+Test all Stock Movements
+In Postman, send:
+GET http://localhost:5000/api/stock-movements
+
+{
+  "success": true,
+  "count": 520,
+  "data": [
+    {
+      "id": "efc7c71a-d156-4de9-82bc-19f022dddb93",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Adjustment",
+      "quantity": 1,
+      "reference_type": "STOCK_AUDIT",
+      "reference_id": null,
+      "movement_date": "2026-11-08T07:51:44.903Z",
+      "notes": "Illustrative stock audit movement",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+	
+Test stock movements for one product
+Use the product_id from the response:
+GET http://localhost:5000/api/stock-movements/product/150e3c9e-c5cd-4165-883a-f89dbdf6e829	
+
+{
+  "success": true,
+  "count": 13,
+  "data": [
+    {
+      "id": "efc7c71a-d156-4de9-82bc-19f022dddb93",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Adjustment",
+      "quantity": 1,
+      "reference_type": "STOCK_AUDIT",
+      "reference_id": null,
+      "movement_date": "2026-11-08T07:51:44.903Z",
+      "notes": "Illustrative stock audit movement",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "e4ede326-f03a-4d7f-87f7-db6592592b75",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 1,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "88ed3e37-a4d8-4fc6-805f-0cd8e75b01d0",
+      "movement_date": "2026-10-27T09:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "74901e24-232d-496e-9788-19a06dfd4319",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 3,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "e12a8385-8a82-4f68-86b8-a4cf77db3832",
+      "movement_date": "2026-10-20T12:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "3f1b3f96-1555-4423-b149-8617d899478b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 3,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "2b9ad465-e14e-4a91-bc44-506f664242b8",
+      "movement_date": "2026-10-17T09:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "fe2d4b9c-4a98-459e-9ba6-1c4bdf757d03",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 2,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "fd4d8718-e99b-45c6-9118-1208f8693deb",
+      "movement_date": "2026-10-10T12:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "5a3e7211-0e3f-43d7-b36b-28d26e350219",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 2,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "1f71f000-6029-4440-88ab-80cd8ef2cce6",
+      "movement_date": "2026-10-02T09:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "55e6db83-907e-4730-a325-a3b2b3e9f29b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 1,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "34dc86fa-2f80-45e9-9c77-0a7b358b3653",
+      "movement_date": "2026-09-25T12:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "e1cf6766-5782-480a-919b-1d656b9605d8",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Sale",
+      "quantity": 1,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "c80f76b7-3881-41a0-8ecf-fc1570790082",
+      "movement_date": "2026-09-22T09:30:00.000Z",
+      "notes": "Historical delivered sale - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "a3599639-608d-4917-aa0a-8b8ac1f3e1ec",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Purchase",
+      "quantity": 8,
+      "reference_type": "PURCHASE_ORDER",
+      "reference_id": "36dfe0ed-24fc-49a2-9f0a-64e7747855b4",
+      "movement_date": "2026-08-06T00:00:00.000Z",
+      "notes": "Historical purchase receipt - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "825bf3ff-5199-4c78-acab-1ebe919be41c",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Purchase",
+      "quantity": 10,
+      "reference_type": "PURCHASE_ORDER",
+      "reference_id": "094e575e-223d-452d-ad0c-15f3080ccec9",
+      "movement_date": "2026-05-13T00:00:00.000Z",
+      "notes": "Historical purchase receipt - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "48efb818-ef41-4c0c-8ac1-44f9f2aac1e4",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Purchase",
+      "quantity": 16,
+      "reference_type": "PURCHASE_ORDER",
+      "reference_id": "cbcbd51d-4816-48d3-b1bb-95e4ea909d7c",
+      "movement_date": "2026-03-21T00:00:00.000Z",
+      "notes": "Historical purchase receipt - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "e3d01ac4-cd8f-48a8-bb37-9894ba1b2709",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Purchase",
+      "quantity": 18,
+      "reference_type": "PURCHASE_ORDER",
+      "reference_id": "8b8d85c4-03c5-48c7-a4e5-74bf1137a044",
+      "movement_date": "2025-12-26T00:00:00.000Z",
+      "notes": "Historical purchase receipt - demo data",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    },
+    {
+      "id": "2acbac45-d34c-419e-83a8-42e71d096759",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "movement_type": "Return",
+      "quantity": 1,
+      "reference_type": "SALES_ORDER",
+      "reference_id": "d3741f93-f3dd-44a7-937c-dee1696c19a8",
+      "movement_date": "2025-11-07T12:30:00.000Z",
+      "notes": "Illustrative customer return associated with refund",
+      "created_at": "2026-11-13T07:51:44.903Z"
+    }
+  ]
+}
+
+Test all Expenses
+In Postman, send:
+GET http://localhost:5000/api/expenses
+
+{
+  "success": true,
+  "count": 60,
+  "data": [
+    {
+      "id": "0a83c630-21b1-47ed-8881-330c48f031a0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "expense_category": "Marketing",
+      "description": "Digital marketing and promotions",
+      "amount": "10800.00",
+      "expense_date": "2026-10-16T18:30:00.000Z",
+      "payment_method": "Credit Card",
+      "reference_number": "EXP-DEMO-202610-5",
+      "created_at": "2026-11-13T07:55:16.127Z"
+    },
+	
+	
+Test one expense
+Use the first expense ID:
+GET http://localhost:5000/api/expenses/0a83c630-21b1-47ed-8881-330c48f031a0	
+
+{
+  "success": true,
+  "data": {
+    "id": "0a83c630-21b1-47ed-8881-330c48f031a0",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "expense_category": "Marketing",
+    "description": "Digital marketing and promotions",
+    "amount": "10800.00",
+    "expense_date": "2026-10-16T18:30:00.000Z",
+    "payment_method": "Credit Card",
+    "reference_number": "EXP-DEMO-202610-5",
+    "created_at": "2026-11-13T07:55:16.127Z"
+  }
+}
+
+Test all Sales Orders
+In Postman, send:
+GET http://localhost:5000/api/sales-orders
+
+{
+  "success": true,
+  "count": 1500,
+  "data": [
+    {
+      "id": "b2567a78-b96e-48e7-a93c-c83f9ba0d24d",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "customer_id": "c5062423-462f-4049-b47a-ea19476fc60c",
+      "order_number": "DEMO-ORD-01087",
+      "order_date": "2026-10-31T13:30:00.000Z",
+      "order_status": "Delivered",
+      "subtotal": "423996.00",
+      "discount_amount": "8479.92",
+      "tax_amount": "74792.89",
+      "shipping_amount": "0.00",
+      "total_amount": "490308.97",
+      "notes": "Generated sample transaction",
+      "created_at": "2026-11-13T07:33:58.084Z",
+      "updated_at": "2026-11-13T07:33:58.084Z"
+    },
+	
+Test one Sales Order
+Use the first order ID:
+GET http://localhost:5000/api/sales-orders/b2567a78-b96e-48e7-a93c-c83f9ba0d24d	
+
+{
+  "success": true,
+  "data": {
+    "id": "b2567a78-b96e-48e7-a93c-c83f9ba0d24d",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "customer_id": "c5062423-462f-4049-b47a-ea19476fc60c",
+    "order_number": "DEMO-ORD-01087",
+    "order_date": "2026-10-31T13:30:00.000Z",
+    "order_status": "Delivered",
+    "subtotal": "423996.00",
+    "discount_amount": "8479.92",
+    "tax_amount": "74792.89",
+    "shipping_amount": "0.00",
+    "total_amount": "490308.97",
+    "notes": "Generated sample transaction",
+    "created_at": "2026-11-13T07:33:58.084Z",
+    "updated_at": "2026-11-13T07:33:58.084Z"
+  }
+}
+
+
+Test all Sales Order Items
+In Postman, send:
+GET http://localhost:5000/api/sales-order-items
+
+{
+  "success": true,
+  "count": 3000,
+  "data": [
+    {
+      "id": "fe6a565f-cbdb-41d6-bc93-36753486f37b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "order_id": "001a3d88-2ef2-4475-b138-cdbc7778be93",
+      "product_id": "7000b92c-2aba-4d05-a0fc-92bb5257f632",
+      "quantity": 3,
+      "unit_price": "13999.00",
+      "unit_cost_snapshot": "10500.00",
+      "discount_amount": "419.97",
+      "tax_amount": "7483.87",
+      "line_total": "41997.00"
+    },
+	
+Test items for one Sales Order
+Use the order_id from the response:
+GET http://localhost:5000/api/sales-order-items/order/001a3d88-2ef2-4475-b138-cdbc7778be93	
+
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": "fe6a565f-cbdb-41d6-bc93-36753486f37b",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "order_id": "001a3d88-2ef2-4475-b138-cdbc7778be93",
+      "product_id": "7000b92c-2aba-4d05-a0fc-92bb5257f632",
+      "quantity": 3,
+      "unit_price": "13999.00",
+      "unit_cost_snapshot": "10500.00",
+      "discount_amount": "419.97",
+      "tax_amount": "7483.87",
+      "line_total": "41997.00"
+    },
+    {
+      "id": "af2ac34f-a5c0-4c11-bdc4-68a165718a72",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "order_id": "001a3d88-2ef2-4475-b138-cdbc7778be93",
+      "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+      "quantity": 2,
+      "unit_price": "129999.00",
+      "unit_cost_snapshot": "110000.00",
+      "discount_amount": "2599.98",
+      "tax_amount": "46331.64",
+      "line_total": "259998.00"
+    }
+  ]
+}
+
+
+est all Purchase Orders
+In Postman, send:
+GET http://localhost:5000/api/purchase-orders
+
+{
+  "success": true,
+  "count": 100,
+  "data": [
+    {
+      "id": "2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "vendor_id": "bdebe289-fa9b-4954-8ce8-966eaa4411d9",
+      "purchase_order_number": "DEMO-PO-0093",
+      "order_date": "2026-09-27T18:30:00.000Z",
+      "expected_delivery_date": "2026-10-04T18:30:00.000Z",
+      "received_date": "2026-10-03T18:30:00.000Z",
+      "status": "Partially Received",
+      "total_amount": "2440000.00",
+      "notes": "Generated sample purchase transaction",
+      "created_at": "2026-11-13T07:44:33.111Z"
+    },
+	
+Test one Purchase Order
+Use the first purchase order ID:
+GET http://localhost:5000/api/purchase-orders/2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae	
+
+{
+  "success": true,
+  "data": {
+    "id": "2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "vendor_id": "bdebe289-fa9b-4954-8ce8-966eaa4411d9",
+    "purchase_order_number": "DEMO-PO-0093",
+    "order_date": "2026-09-27T18:30:00.000Z",
+    "expected_delivery_date": "2026-10-04T18:30:00.000Z",
+    "received_date": "2026-10-03T18:30:00.000Z",
+    "status": "Partially Received",
+    "total_amount": "2440000.00",
+    "notes": "Generated sample purchase transaction",
+    "created_at": "2026-11-13T07:44:33.111Z"
+  }
+}
+
+Test all Purchase Order Items
+In Postman, keep your Admin login cookie.
+
+Test 1 – Get all Purchase Order Items
+GET http://localhost:5000/api/purchase-order-items
+
+{
+  "success": true,
+  "count": 250,
+  "data": [
+    {
+      "id": "2f0b52aa-c251-4d79-84ab-3c7e8a55c442",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "purchase_order_id": "050ddb56-c8e0-4fc8-a6d1-43560e4d3364",
+      "product_id": "f4f3f1e4-d9c1-47b6-af37-2a1acc634e63",
+      "quantity": 10,
+      "received_quantity": 5,
+      "unit_cost": "1100.00",
+      "line_total": "11000.00"
+    },
+	
+	
+Test items by Purchase Order
+Now test the second endpoint in Postman:
+GET http://localhost:5000/api/purchase-order-items/order/2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae	
+
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": "7d0a6dee-93f9-47b6-b1a1-a2e9daf8109e",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "purchase_order_id": "2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae",
+      "product_id": "7daaa860-8423-43f0-84cc-86f329941235",
+      "quantity": 19,
+      "received_quantity": 9,
+      "unit_cost": "60000.00",
+      "line_total": "1140000.00"
+    },
+    {
+      "id": "e165403c-bf7d-4081-81b2-fa5abcd92cb8",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "purchase_order_id": "2cb6000c-c8ce-43f9-9d5d-3d5d298e30ae",
+      "product_id": "5a447ed7-5fb5-4e6c-a70a-fc93f2975659",
+      "quantity": 20,
+      "received_quantity": 10,
+      "unit_cost": "65000.00",
+      "line_total": "1300000.00"
+    }
+  ]
+}
+
+
+Test Sales Payments: Get all
+Open Postman and keep your Admin login cookie.
+
+Send:
+GET http://localhost:5000/api/sales-payments
+{
+  "success": true,
+  "count": 1425,
+  "data": [
+    {
+      "id": "dcbad3fc-7b43-4a8a-8ebb-576a624fc6a9",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "order_id": "b2567a78-b96e-48e7-a93c-c83f9ba0d24d",
+      "payment_reference": "PAY-DEMO-ORD-01087",
+      "payment_date": "2026-10-31T14:30:00.000Z",
+      "payment_method": "Credit Card",
+      "payment_status": "Completed",
+      "amount": "490308.97"
+    },
+	
+Test one Sales Payment
+Now test the individual payment endpoint using the ID from your response:
+GET http://localhost:5000/api/sales-payments/dcbad3fc-7b43-4a8a-8ebb-576a624fc6a9	
+
+{
+  "success": true,
+  "data": {
+    "id": "dcbad3fc-7b43-4a8a-8ebb-576a624fc6a9",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "order_id": "b2567a78-b96e-48e7-a93c-c83f9ba0d24d",
+    "payment_reference": "PAY-DEMO-ORD-01087",
+    "payment_date": "2026-10-31T14:30:00.000Z",
+    "payment_method": "Credit Card",
+    "payment_status": "Completed",
+    "amount": "490308.97"
+  }
+}
+
+eep your Admin login cookie.
+
+Send:
+GET http://localhost:5000/api/sales-refunds
+
+{
+  "success": true,
+  "count": 30,
+  "data": [
+    {
+      "id": "94dec715-df0d-4f52-81c0-f5990d12a337",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "order_id": "0b2228d3-85bc-470a-b089-cc21024bb2ee",
+      "payment_id": "73a452bc-26dd-4093-a977-6962b9bc6f4c",
+      "refund_reference": "REF-DEMO-ORD-00429",
+      "refund_date": "2025-11-12T07:30:00.000Z",
+      "refund_reason": "Product returned by customer",
+      "refund_status": "Completed",
+      "amount": "243549.17"
+    },
+	
+Test one Sales Refund
+Now test the individual refund endpoint using the ID from your response:
+GET http://localhost:5000/api/sales-refunds/94dec715-df0d-4f52-81c0-f5990d12a337	
+{
+  "success": true,
+  "data": {
+    "id": "94dec715-df0d-4f52-81c0-f5990d12a337",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "order_id": "0b2228d3-85bc-470a-b089-cc21024bb2ee",
+    "payment_id": "73a452bc-26dd-4093-a977-6962b9bc6f4c",
+    "refund_reference": "REF-DEMO-ORD-00429",
+    "refund_date": "2025-11-12T07:30:00.000Z",
+    "refund_reason": "Product returned by customer",
+    "refund_status": "Completed",
+    "amount": "243549.17"
+  }
+}
+
+GET http://localhost:5000/api/analytics/sales-summary
+
+{
+  "success": true,
+  "data": {
+    "total_orders": 1500,
+    "total_sales": "302324537.20",
+    "average_order_value": "201549.69"
+  }
+}
+
+Test Top Selling Products
+In Postman, keep your Admin login cookie.
+
+Send:
+GET http://localhost:5000/api/analytics/top-products
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    {
+      "product_id": "5a447ed7-5fb5-4e6c-a70a-fc93f2975659",
+      "product_name": "Samsung Galaxy S26",
+      "sku": "MOB001",
+      "brand": "Samsung",
+      "total_quantity_sold": 120,
+      "total_revenue": "9599880.00"
+    },
+    {
+      "product_id": "16158e82-32c6-47e8-9a10-a14e842ff641",
+      "product_name": "Nikon Z50",
+      "sku": "CAM003",
+      "brand": "Nikon",
+      "total_quantity_sold": 120,
+      "total_revenue": "9599880.00"
+    },
+    {
+      "product_id": "d1bc5452-2ca6-4819-8859-bd658639e63f",
+      "product_name": "Samsung 55 inch QLED TV",
+      "sku": "TV002",
+      "brand": "Samsung",
+      "total_quantity_sold": 120,
+      "total_revenue": "9599880.00"
+    },
+    {
+      "product_id": "7daaa860-8423-43f0-84cc-86f329941235",
+      "product_name": "Canon EOS R50",
+      "sku": "CAM001",
+      "brand": "Canon",
+      "total_quantity_sold": 120,
+      "total_revenue": "8999880.00"
+    },
+    {
+      "product_id": "81c69f10-8054-44a2-b8c9-2768858daa5d",
+      "product_name": "Google Pixel 11",
+      "sku": "MOB008",
+      "brand": "Google",
+      "total_quantity_sold": 120,
+      "total_revenue": "8999880.00"
+    }
+  ]
+}
+
+GET http://localhost:5000/api/analytics/top-customers
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    {
+      "customer_id": "4054e5ba-4b96-4506-83b9-7cf127401a65",
+      "customer_name": "Customer 066",
+      "email": "customer66@example.com",
+      "phone": "+919000000066",
+      "total_orders": 7,
+      "total_revenue": "982105.87",
+      "average_order_value": "140300.84"
+    },
+    {
+      "customer_id": "0e0c2bc7-ce72-4b48-ad09-e0e2b8ec2f0d",
+      "customer_name": "Customer 024",
+      "email": "customer24@example.com",
+      "phone": "+919000000024",
+      "total_orders": 8,
+      "total_revenue": "949710.38",
+      "average_order_value": "118713.80"
+    },
+    {
+      "customer_id": "e2813dc9-d663-4fee-af8f-9630444f4630",
+      "customer_name": "Customer 175",
+      "email": "customer175@example.com",
+      "phone": "+919000000175",
+      "total_orders": 7,
+      "total_revenue": "941890.33",
+      "average_order_value": "134555.76"
+    },
+    {
+      "customer_id": "013c01c2-df7e-4acc-a4e3-8a7abb04bd01",
+      "customer_name": "Customer 115",
+      "email": "customer115@example.com",
+      "phone": "+919000000115",
+      "total_orders": 7,
+      "total_revenue": "872611.52",
+      "average_order_value": "124658.79"
+    },
+    {
+      "customer_id": "2dff1810-9730-48c8-ab6e-a860702504c0",
+      "customer_name": "Customer 022",
+      "email": "customer22@example.com",
+      "phone": "+919000000022",
+      "total_orders": 8,
+      "total_revenue": "870213.42",
+      "average_order_value": "108776.68"
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/analytics/low-stock
+
+{
+  "success": true,
+  "count": 15,
+  "data": [
+    {
+      "product_id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+      "product_name": "Samsung 1TB SSD",
+      "sku": "STR001",
+      "brand": "Samsung",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 10
+    },
+	
+	
+GET http://localhost:5000/api/analytics/out-of-stock	
+
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    {
+      "product_id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+      "product_name": "Bose Soundbar",
+      "sku": "AUD003",
+      "brand": "Bose",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 5
+    },
+    {
+      "product_id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+      "product_name": "Dell XPS 14",
+      "sku": "LAP002",
+      "brand": "Dell",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 3
+    },
+    {
+      "product_id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+      "product_name": "Samsung 1TB SSD",
+      "sku": "STR001",
+      "brand": "Samsung",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 10
+    },
+    {
+      "product_id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+      "product_name": "TCL 43 inch Smart TV",
+      "sku": "TV006",
+      "brand": "TCL",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 5
+    },
+    {
+      "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+      "product_name": "iPhone 17 Pro",
+      "sku": "MOB004",
+      "brand": "Apple",
+      "quantity_on_hand": 0,
+      "quantity_reserved": 0,
+      "quantity_available": 0,
+      "reorder_level": 3
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/analytics/category-sales
+
+{
+  "success": true,
+  "count": 8,
+  "data": [
+    {
+      "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+      "category_name": "Laptops",
+      "total_products_sold": 8,
+      "total_quantity_sold": 960,
+      "total_revenue": "89039040.00"
+    },
+    {
+      "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+      "category_name": "Mobiles",
+      "total_products_sold": 8,
+      "total_quantity_sold": 960,
+      "total_revenue": "64439040.00"
+    },
+    {
+      "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+      "category_name": "Storage",
+      "total_products_sold": 5,
+      "total_quantity_sold": 600,
+      "total_revenue": "4847400.00"
+    },
+    {
+      "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+      "category_name": "Televisions",
+      "total_products_sold": 6,
+      "total_quantity_sold": 720,
+      "total_revenue": "48119280.00"
+    },
+    {
+      "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+      "category_name": "Cameras",
+      "total_products_sold": 5,
+      "total_quantity_sold": 600,
+      "total_revenue": "35039400.00"
+    },
+    {
+      "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+      "category_name": "Networking",
+      "total_products_sold": 5,
+      "total_quantity_sold": 600,
+      "total_revenue": "2855400.00"
+    },
+    {
+      "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+      "category_name": "Audio",
+      "total_products_sold": 6,
+      "total_quantity_sold": 720,
+      "total_revenue": "15779280.00"
+    },
+    {
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "category_name": "Accessories",
+      "total_products_sold": 7,
+      "total_quantity_sold": 840,
+      "total_revenue": "1355160.00"
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/analytics/payment-methods
+
+{
+  "success": true,
+  "count": 4,
+  "data": [
+    {
+      "payment_method": "Debit Card",
+      "total_payments": 322,
+      "total_amount": "64214483.28"
+    },
+    {
+      "payment_method": "Credit Card",
+      "total_payments": 318,
+      "total_amount": "64212186.56"
+    },
+    {
+      "payment_method": "UPI",
+      "total_payments": 319,
+      "total_amount": "63444171.31"
+    },
+    {
+      "payment_method": "Net Banking",
+      "total_payments": 316,
+      "total_amount": "62897364.55"
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/analytics/daily-sales
+{
+  "success": true,
+  "count": 365,
+  "data": [
+    {
+      "sales_date": "2026-10-31",
+      "total_orders": 4,
+      "total_sales": "1454731.54",
+      "average_order_value": "363682.89"
+    },
+	
+GET http://localhost:5000/api/analytics/inventory-valuation
+	
+{
+  "success": true,
+  "data": {
+    "total_products": 50,
+    "total_units": 687,
+    "total_cost_value": "17462440.00",
+    "total_selling_value": "21810713.00",
+    "products": [
+      {
+        "product_id": "88409d49-40c8-47d4-8c6c-17062d4b0a26",
+        "product_name": "LG 55 inch OLED TV",
+        "sku": "TV004",
+        "quantity_on_hand": 13,
+        "unit_cost": "108000.00",
+        "unit_price": "129999.00",
+        "inventory_cost_value": "1404000.00",
+        "potential_selling_value": "1689987.00"
+      },
+
+
+GET http://localhost:5000/api/analytics/stock-movement-summary	  
+
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    {
+      "movement_type": "Sale",
+      "total_movements": 300,
+      "total_quantity": 601
+    },
+    {
+      "movement_type": "Purchase",
+      "total_movements": 170,
+      "total_quantity": 1932
+    },
+    {
+      "movement_type": "Return",
+      "total_movements": 40,
+      "total_quantity": 40
+    },
+    {
+      "movement_type": "Damage",
+      "total_movements": 5,
+      "total_quantity": 5
+    },
+    {
+      "movement_type": "Adjustment",
+      "total_movements": 5,
+      "total_quantity": 5
+    }
+  ]
+}
+
+GET http://localhost:5000/api/analytics/purchase-summary
+
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total_purchase_orders": 100,
+      "total_purchase_value": "108100160.00",
+      "average_purchase_order_value": "1081001.60"
+    },
+    "status_breakdown": [
+      {
+        "status": "Received",
+        "total_orders": 60,
+        "total_amount": "61727360.00"
+      },
+      {
+        "status": "Pending",
+        "total_orders": 10,
+        "total_amount": "14401200.00"
+      },
+      {
+        "status": "Ordered",
+        "total_orders": 10,
+        "total_amount": "15152200.00"
+      },
+      {
+        "status": "Partially Received",
+        "total_orders": 10,
+        "total_amount": "9073800.00"
+      },
+      {
+        "status": "Approved",
+        "total_orders": 10,
+        "total_amount": "7745600.00"
+      }
+    ]
+  }
+}
+
+
+GET http://localhost:5000/api/analytics/vendor-purchases
+
+{
+  "success": true,
+  "count": 15,
+  "data": [
+    {
+      "vendor_id": "3b12e61d-aa1c-47e9-beb7-fee6c3a5aeda",
+      "vendor_name": "SanDisk Distribution",
+      "total_purchase_orders": 6,
+      "total_purchase_value": "10531350.00",
+      "average_purchase_order_value": "1755225.00"
+    },
+    {
+      "vendor_id": "1a9c397d-eec7-42ad-8af6-4be5b6622c39",
+      "vendor_name": "TP Link Distribution",
+      "total_purchase_orders": 6,
+      "total_purchase_value": "9999850.00",
+      "average_purchase_order_value": "1666641.67"
+    },
+    {
+      "vendor_id": "98b02168-4502-4b13-ae9d-e203ae193e4f",
+      "vendor_name": "Sony Electronics Wholesale",
+      "total_purchase_orders": 6,
+      "total_purchase_value": "8915000.00",
+      "average_purchase_order_value": "1485833.33"
+    },
+    {
+      "vendor_id": "b042cd24-d1e6-4830-a07b-1fa865123015",
+      "vendor_name": "JBL Audio Distributors",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "7873550.00",
+      "average_purchase_order_value": "1124792.86"
+    },
+    {
+      "vendor_id": "63a3eb2b-42aa-4157-a597-291ce5c0a25a",
+      "vendor_name": "Boat Lifestyle Distribution",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "7615650.00",
+      "average_purchase_order_value": "1087950.00"
+    },
+    {
+      "vendor_id": "c1bc07da-2943-41dc-809a-0a693ff94162",
+      "vendor_name": "Nikon Distribution India",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "7548130.00",
+      "average_purchase_order_value": "1078304.29"
+    },
+    {
+      "vendor_id": "7638f98b-722f-4089-b76f-ae52fec4aef2",
+      "vendor_name": "LG Electronics Supplies",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "6986600.00",
+      "average_purchase_order_value": "998085.71"
+    },
+    {
+      "vendor_id": "e3b9c35e-3cb1-4c59-b158-9d08f35ad4fc",
+      "vendor_name": "Western Digital Supplies",
+      "total_purchase_orders": 6,
+      "total_purchase_value": "6875990.00",
+      "average_purchase_order_value": "1145998.33"
+    },
+    {
+      "vendor_id": "c827ae1d-cc5f-4477-bfbc-b7c42550f3b1",
+      "vendor_name": "Lenovo Wholesale India",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "6472850.00",
+      "average_purchase_order_value": "924692.86"
+    },
+    {
+      "vendor_id": "ca136edc-5d37-4d20-84e2-fcff9c6cf069",
+      "vendor_name": "Samsung Distribution India",
+      "total_purchase_orders": 6,
+      "total_purchase_value": "6281500.00",
+      "average_purchase_order_value": "1046916.67"
+    },
+    {
+      "vendor_id": "bb226a23-5349-439b-9c60-a50a9273035b",
+      "vendor_name": "HP Electronics Distribution",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "6211800.00",
+      "average_purchase_order_value": "887400.00"
+    },
+    {
+      "vendor_id": "40728b38-df0d-4efc-ac2c-362375d408c1",
+      "vendor_name": "Logitech India Wholesale",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "6046100.00",
+      "average_purchase_order_value": "863728.57"
+    },
+    {
+      "vendor_id": "89eb75c2-3bfb-4309-b47e-049eac519f2f",
+      "vendor_name": "Dell India Supplies",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "6005090.00",
+      "average_purchase_order_value": "857870.00"
+    },
+    {
+      "vendor_id": "bdebe289-fa9b-4954-8ce8-966eaa4411d9",
+      "vendor_name": "Canon India Wholesale",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "5886150.00",
+      "average_purchase_order_value": "840878.57"
+    },
+    {
+      "vendor_id": "78f5c724-5192-43ba-a89c-4c7c142fa139",
+      "vendor_name": "Apple Authorized Distributor",
+      "total_purchase_orders": 7,
+      "total_purchase_value": "4850550.00",
+      "average_purchase_order_value": "692935.71"
+    }
+  ]
+}
+
+GET http://localhost:5000/api/analytics/expense-summary	
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total_expense_records": 60,
+      "total_expense_amount": "1717675.00",
+      "average_expense_amount": "28627.92"
+    },
+    "category_breakdown": [
+      {
+        "expense_category": "Salaries",
+        "total_records": 12,
+        "total_amount": "1032750.00"
+      },
+      {
+        "expense_category": "Rent",
+        "total_records": 12,
+        "total_amount": "421750.00"
+      },
+      {
+        "expense_category": "Marketing",
+        "total_records": 12,
+        "total_amount": "143400.00"
+      },
+      {
+        "expense_category": "Electricity",
+        "total_records": 12,
+        "total_amount": "102000.00"
+      },
+      {
+        "expense_category": "Internet",
+        "total_records": 12,
+        "total_amount": "17775.00"
+      }
+    ]
+  }
+}
+
+GET http://localhost:5000/api/analytics/refund-summary
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total_refund_records": 30,
+      "total_refund_amount": "4583917.23",
+      "average_refund_amount": "152797.24"
+    },
+    "status_breakdown": [
+      {
+        "refund_status": "Completed",
+        "total_records": 30,
+        "total_amount": "4583917.23"
+      }
+    ],
+    "reason_breakdown": [
+      {
+        "refund_reason": "Damaged product",
+        "total_records": 10,
+        "total_amount": "1605377.13"
+      },
+      {
+        "refund_reason": "Customer requested refund",
+        "total_records": 10,
+        "total_amount": "1569253.65"
+      },
+      {
+        "refund_reason": "Product returned by customer",
+        "total_records": 10,
+        "total_amount": "1409286.45"
+      }
+    ]
+  }
+}
+Analytics controller progress
+We have now updated the business context in these analytics controllers:
+1. Sales Summary
+2. Top Products
+3. Top Customers
+4. Low Stock
+5. Out of Stock
+6. Category Sales
+7. Payment Methods
+8. Daily Sales
+9. Inventory Valuation
+10. Stock Movement Summary
+11. Purchase Summary
+12. Vendor Purchase Summary
+13. Expense Summary
+14. Refund Summary
+
+GET http://localhost:5000/api/analytics/monthly-sales
+
+{
+  "success": true,
+  "count": 12,
+  "data": [
+    {
+      "month": "2025-11",
+      "total_orders": 125,
+      "total_sales": "24741287.70",
+      "average_order_value": "197930.30"
+    },
+    {
+      "month": "2025-12",
+      "total_orders": 129,
+      "total_sales": "27092303.08",
+      "average_order_value": "210017.85"
+    },
+    {
+      "month": "2026-01",
+      "total_orders": 124,
+      "total_sales": "25132861.20",
+      "average_order_value": "202684.36"
+    },
+    {
+      "month": "2026-02",
+      "total_orders": 117,
+      "total_sales": "23169837.74",
+      "average_order_value": "198032.80"
+    },
+    {
+      "month": "2026-03",
+      "total_orders": 129,
+      "total_sales": "25335625.02",
+      "average_order_value": "196400.19"
+    },
+    {
+      "month": "2026-04",
+      "total_orders": 120,
+      "total_sales": "24588024.26",
+      "average_order_value": "204900.20"
+    },
+    {
+      "month": "2026-05",
+      "total_orders": 129,
+      "total_sales": "26263477.60",
+      "average_order_value": "203592.85"
+    },
+    {
+      "month": "2026-06",
+      "total_orders": 125,
+      "total_sales": "25419066.41",
+      "average_order_value": "203352.53"
+    },
+    {
+      "month": "2026-07",
+      "total_orders": 124,
+      "total_sales": "25348405.96",
+      "average_order_value": "204422.63"
+    },
+    {
+      "month": "2026-08",
+      "total_orders": 129,
+      "total_sales": "24671764.72",
+      "average_order_value": "191253.99"
+    },
+    {
+      "month": "2026-09",
+      "total_orders": 125,
+      "total_sales": "25687542.83",
+      "average_order_value": "205500.34"
+    },
+    {
+      "month": "2026-10",
+      "total_orders": 124,
+      "total_sales": "24874340.68",
+      "average_order_value": "200599.52"
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/businesses
+
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "business_name": "Demo Electronics Store",
+      "business_type": "Electronics E-Commerce",
+      "email": "info@demo-electronics.com",
+      "phone": "+91-9000000000",
+      "address": "Visakhapatnam, Andhra Pradesh, India",
+      "currency": "INR",
+      "tax_number": null,
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    }
+  ]
+}
+
+
+GET http://localhost:5000/api/businesses/deb3affe-4468-4c75-9125-187376f1b0f9
+
+{
+  "success": true,
+  "data": {
+    "id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "business_name": "Demo Electronics Store",
+    "business_type": "Electronics E-Commerce",
+    "email": "info@demo-electronics.com",
+    "phone": "+91-9000000000",
+    "address": "Visakhapatnam, Andhra Pradesh, India",
+    "currency": "INR",
+    "tax_number": null,
+    "is_active": true,
+    "created_at": "2026-11-13T07:25:41.385Z",
+    "updated_at": "2026-11-13T07:25:41.385Z"
+  }
+}
+
+GET http://localhost:5000/api/businesses/11111111-1111-4111-8111-111111111111
+{
+  "success": false,
+  "message": "Business not found"
+}

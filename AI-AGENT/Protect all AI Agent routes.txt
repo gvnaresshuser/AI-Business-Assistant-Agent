@@ -1,0 +1,156 @@
+Protect all AI Agent routes
+
+Now we must ensure that every conversation API requires a valid JWT.
+
+Open:
+
+backend/src/routes/agent.routes.ts
+1. Add the middleware import
+import { authenticateToken } from "../middleware/auth.middleware.js";
+
+Authenticated administrator
+First, log in again using:
+POST
+http://localhost:5000/api/auth/login
+
+Body → raw → JSON
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+
+
+Use your administrator credentials. Postman should save the new access_token cookie automatically.
+
+Then send:
+
+GET 
+http://localhost:5000/api/agent/conversations
+
+Expected result: HTTP 200 OK, returning the administrator's conversations.
+
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:56:40.570Z",
+      "last_activity_at": "2026-11-14T03:17:10.293Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:56:40.570Z",
+      "updated_at": "2026-11-14T03:17:10.293Z"
+    },
+    {
+      "id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "November Sales Analysis",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:46:58.909Z",
+      "last_activity_at": "2026-11-14T02:47:05.929Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:46:58.909Z",
+      "updated_at": "2026-11-14T03:04:21.329Z"
+    }
+  ]
+}
+
+Unauthenticated request
+Remove the access_token cookie for localhost and send the same GET request.
+
+{
+  "success": false,
+  "message": "Authentication required. Please log in."
+}
+
+Test user-to-user conversation isolation
+Now we'll verify an important security rule:
+
+A Sales Executive must not be able to retrieve the Administrator's conversations.
+
+We'll use your existing Sales Executive account:
+- Email: sales@demo-electronics.local
+- Role: Staff
+Test 1 – Login as Sales Executive
+Send:
+
+POST 
+http://localhost:5000/api/auth/login
+
+Body:
+{
+  "email": "sales@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "9f9d7d19-e03f-4677-a646-ce48102be506",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+    "full_name": "Sales Executive",
+    "email": "sales@demo-electronics.local",
+    "role_name": "Staff",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+SELECT
+    full_name,
+    email,
+    is_active,
+    password_hash IS NOT NULL AS has_password
+FROM auth_users_biz_agent
+WHERE email = 'sales@demo-electronics.local';
+
+Use the existing Sales Executive password. Don't share it here.
+
+[{
+  "full_name": "Sales Executive",
+  "email": "sales@demo-electronics.local",
+  "is_active": true,
+  "has_password": true
+}]
+
+
+GET 
+http://localhost:5000/api/agent/conversations
+
+{
+  "success": true,
+  "count": 0,
+  "data": []
+}
+
+Verify direct session access protection
+Let's perform one more important security test.
+
+While logged in as the Sales Executive, try retrieving the administrator's conversation messages.
+
+GET
+http://localhost:5000/api/agent/conversations/71fc52be-5088-4c29-89aa-b60e45921640/messages
+
+{
+  "success": false,
+  "message": "Conversation session not found or access denied"
+}
+
+Security verification completed
+Security test	Result
+Administrator login	Passed
+Sales Executive login	Passed
+Unauthenticated API access	Blocked
+Administrator conversation isolation	Passed
+Direct access using another user's session ID	Blocked
+Business and user scoped conversation queries	Verified
+

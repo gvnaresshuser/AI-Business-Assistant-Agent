@@ -1,0 +1,148 @@
+Create a transaction utility
+
+Create a new file:
+
+backend/src/utils/dbTransaction.ts
+
+How it works
+BEGIN – Start transaction
+
+
+Execute database operations
+
+
+COMMIT
+All operations succeed
+
+ROLLBACK
+Any operation fails
+
+
+
+For example, when deleting a conversation:
+1. Delete its messages.
+2. Delete its session.
+3. Commit both operations together.
+If either deletion fails, both are rolled back.
+
+
+Add permanent conversation deletion
+Next, we'll update session.repository.ts with a new function named deleteSessionPermanently().
+
+It will:
+- Verify the session belongs to the specified business and user.
+- Delete all messages associated with that session.
+- Delete the session itself.
+- Use the transaction utility so both deletions succeed or neither does.
+
+
+Add permanent deletion to the repository
+
+Create a temporary conversation
+- Method: POST
+- URL: http://localhost:5000/api/agent/conversations
+- Body: none
+
+{
+  "success": true,
+  "message": "Conversation created successfully",
+  "data": {
+    "id": "d0c22995-0847-4809-9bdf-4eeb08a78aeb",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "New Conversation",
+    "session_status": "Active",
+    "started_at": "2026-11-14T03:28:23.689Z",
+    "last_activity_at": "2026-11-14T03:28:23.689Z",
+    "ended_at": null,
+    "metadata": {},
+    "created_at": "2026-11-14T03:28:23.689Z",
+    "updated_at": "2026-11-14T03:28:23.689Z"
+  }
+}
+
+Add a test message
+We'll add one message so we can verify that permanent deletion removes both the session and its associated messages.
+
+In Postman, use:
+- Method: POST
+- URL: http://localhost:5000/api/agent/chat
+- Body: raw → JSON
+{
+  "question": "This is a temporary conversation deletion test.",
+  "sessionId": "d0c22995-0847-4809-9bdf-4eeb08a78aeb"
+}
+{
+  "success": true,
+  "sessionId": "d0c22995-0847-4809-9bdf-4eeb08a78aeb",
+  "question": "This is a temporary conversation deletion test.",
+  "answer": "Hello! I acknowledge your test message. I'm ready whenever you need assistance with analyzing sales, inventory, purchases, expenses, top products, or any other business performance metrics. How can I help you today?"
+}
+
+Permanently delete the conversation
+In Postman, send:
+- Method: DELETE
+- URL:
+http://localhost:5000/api/agent/conversations/d0c22995-0847-4809-9bdf-4eeb08a78aeb
+
+
+- Body: None
+
+{
+  "success": true,
+  "message": "Conversation permanently deleted"
+}
+
+Verify deletion in NeonDB
+Now let's confirm that both the session and its messages have actually been removed.
+
+Open your Neon SQL Editor and execute:
+SELECT COUNT(*) AS remaining_sessions
+FROM agent_sessions_biz_agent
+WHERE id = 'd0c22995-0847-4809-9bdf-4eeb08a78aeb';
+
+[{
+  "remaining_sessions": 0
+}]
+
+
+SELECT COUNT(*) AS remaining_messages
+FROM agent_messages_biz_agent
+WHERE session_id = 'd0c22995-0847-4809-9bdf-4eeb08a78aeb';
+[{
+  "remaining_messages": 0
+}]
+
+Conversation management – completed
+We have now implemented and tested:
+Feature	Status
+Create conversation	Passed
+List active conversations	Passed
+Retrieve conversation messages	Passed
+Rename conversation	Passed
+Archive conversation	Passed
+Restore conversation	Passed
+List archived conversations	Passed
+Permanently delete conversation	Passed
+Delete associated messages	Passed
+
+One final negative test: Try deleting the same session ID again.
+- Method: DELETE
+- URL: http://localhost:5000/api/agent/conversations/d0c22995-0847-4809-9bdf-4eeb08a78aeb
+Expected: HTTP 404 Not Found, with a message indicating the conversation was not found or you lack permission.
+
+{
+  "success": false,
+  "message": "Conversation not found or you do not have permission to delete it"
+}
+
+Conversation management completed
+All tests passed
+Your conversation management module now supports:
+1. Create and list conversations.
+2. Retrieve conversation history.
+3. Rename conversations.
+4. Archive and restore conversations.
+5. List archived conversations.
+6. Permanently delete conversations and their messages.
+7. Validate ownership and handle nonexistent sessions.

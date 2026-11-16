@@ -1,0 +1,72 @@
+AI-Agent Question:
+-----------------
+What are our total sales this month?
+
+
+
+RAG QUESTIONS:
+--------------
+How long is the warranty for a laptop?
+What is the warranty period for a keyboard?
+What is the replacement policy for defective electronic products?
+Are there any conditions or exclusions under which the warranty becomes invalid?
+What should a customer do if a product develops a problem during the warranty period?
+
+
+SELECT
+    business_id,
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+GROUP BY
+    business_id,
+    document_name
+ORDER BY
+    document_name;
+	
+	
+SELECT
+    COUNT(*) AS total_knowledge_chunks,
+    COUNT(DISTINCT document_name) AS total_documents
+FROM agent_knowledge_chunks_biz_agent;
+
+
+SELECT
+    business_id,
+    document_name,
+    chunk_index,
+    LEFT(chunk_content, 300) AS content_preview,
+    metadata
+FROM agent_knowledge_chunks_biz_agent
+ORDER BY document_name, chunk_index
+LIMIT 20;
+
+
+SELECT
+    COUNT(*) AS total_chunks,
+    COUNT(embedding) AS chunks_with_embeddings,
+    COUNT(*) - COUNT(embedding) AS missing_embeddings
+FROM agent_knowledge_chunks_biz_agent;	
+
+----------------------
+embedding_dimensions
+
+SELECT
+    business_id,
+    document_name,
+    chunk_index,
+    vector_dims(embedding) AS embedding_dimensions,
+    embedding::text AS embedding_values
+FROM agent_knowledge_chunks_biz_agent
+ORDER BY document_name, chunk_index;
+
+
+
+https://aistudio.google.com/apikey?utm_source=chatgpt.com
+https://aistudio.google.com/apikey
+
+
+
+https://drive.google.com/file/d/1a5SS8UHnPaXdGvY53ppSpyG_9Y5Bs2z1/view?usp=sharing
+https://drive.google.com/file/d/1a5SS8UHnPaXdGvY53ppSpyG_9Y5Bs2z1/view?usp=sharing
+https://drive.google.com/file/d/1a5SS8UHnPaXdGvY53ppSpyG_9Y5Bs2z1/view?usp=sharing

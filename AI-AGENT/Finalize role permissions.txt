@@ -1,0 +1,252 @@
+Finalize role permissions
+We'll use this permission structure:
+Module	Admin	Manager	Staff
+Business profile	Yes	No	No
+Products	Yes	Yes	Yes
+Categories	Yes	Yes	Yes
+Customers	Yes	Yes	Yes
+Sales Orders	Yes	Yes	Yes
+Sales Order Items	Yes	Yes	Yes
+Sales Payments	Yes	Yes	Yes
+Sales Refunds	Yes	Yes	No
+Vendors	Yes	Yes	No
+Purchase Orders	Yes	Yes	No
+Purchase Order Items	Yes	Yes	No
+Inventory	Yes	Yes	Yes
+Stock Movements	Yes	Yes	Yes
+Expenses	Yes	Yes	No
+Analytics	Yes	Yes	No
+AI Business Agent	Yes	Yes	No
+
+Staff login
+In Postman, send:
+POST http://localhost:5000/api/auth/login
+
+
+Body → raw → JSON:
+{
+  "email": "sales@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "9f9d7d19-e03f-4677-a646-ce48102be506",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+    "full_name": "Sales Executive",
+    "email": "sales@demo-electronics.local",
+    "role_name": "Staff",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+GET http://localhost:5000/api/products
+
+GET http://localhost:5000/api/analytics/sales-summary
+{
+  "success": false,
+  "message": "You do not have permission to access this resource"
+}
+
+GET http://localhost:5000/api/agent/conversations
+
+{
+  "success": false,
+  "message": "You do not have permission to access this resource"
+}
+
+
+
+POST http://localhost:5000/api/auth/login
+{
+  "email": "manager@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "email": "sales@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+GET http://localhost:5000/api/products
+GET http://localhost:5000/api/analytics/sales-summary
+GET http://localhost:5000/api/agent/conversations
+GET http://localhost:5000/api/expenses
+GET http://localhost:5000/api/businesses
+
+{
+  "success": true,
+  "count": 50,
+  "data": [
+    {
+      "id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "65W Fast Charger",
+      "sku": "ACC005",
+      "brand": "Anker",
+      "model_number": "C65",
+      "description": "Fast charging adapter",
+      "unit_price": "2499.00",
+      "unit_cost": "1600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+{
+  "success": true,
+  "data": {
+    "total_orders": 1500,
+    "total_sales": "302324537.20",
+    "average_order_value": "201549.69"
+  }
+}
+
+{
+  "success": true,
+  "count": 0,
+  "data": []
+}
+{
+  "success": true,
+  "count": 60,
+  "data": [
+    {
+      "id": "0a83c630-21b1-47ed-8881-330c48f031a0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "expense_category": "Marketing",
+      "description": "Digital marketing and promotions",
+      "amount": "10800.00",
+      "expense_date": "2026-10-16T18:30:00.000Z",
+      "payment_method": "Credit Card",
+      "reference_number": "EXP-DEMO-202610-5",
+      "created_at": "2026-11-13T07:55:16.127Z"
+    },
+	
+	{
+  "success": false,
+  "message": "You do not have permission to access this resource"
+}
+
+Admin authorization test
+Please log in using your Admin account:
+POST http://localhost:5000/api/auth/login
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+
+Then test these five endpoints:
+Endpoint	Expected
+GET http://localhost:5000/api/businesses	200
+GET http://localhost:5000/api/products	200
+GET http://localhost:5000/api/analytics/sales-summary	200
+GET http://localhost:5000/api/agent/conversations	200
+GET http://localhost:5000/api/expenses	200
+
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "business_name": "Demo Electronics Store",
+      "business_type": "Electronics E-Commerce",
+      "email": "info@demo-electronics.com",
+      "phone": "+91-9000000000",
+      "address": "Visakhapatnam, Andhra Pradesh, India",
+      "currency": "INR",
+      "tax_number": null,
+      "is_active": true,
+      "created_at": "2026-11-13T07:25:41.385Z",
+      "updated_at": "2026-11-13T07:25:41.385Z"
+    }
+  ]
+}
+
+{
+  "success": true,
+  "count": 50,
+  "data": [
+    {
+      "id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+      "product_name": "65W Fast Charger",
+      "sku": "ACC005",
+      "brand": "Anker",
+      "model_number": "C65",
+      "description": "Fast charging adapter",
+      "unit_price": "2499.00",
+      "unit_cost": "1600.00",
+      "reorder_level": 10,
+      "is_active": true,
+      "created_at": "2026-11-13T07:28:14.967Z",
+      "updated_at": "2026-11-13T07:28:14.967Z"
+    },
+	
+	{
+  "success": true,
+  "data": {
+    "total_orders": 1500,
+    "total_sales": "302324537.20",
+    "average_order_value": "201549.69"
+  }
+}
+
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:56:40.570Z",
+      "last_activity_at": "2026-11-14T03:17:10.293Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:56:40.570Z",
+      "updated_at": "2026-11-14T03:17:10.293Z"
+    },
+    {
+      "id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "November Sales Analysis",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:46:58.909Z",
+      "last_activity_at": "2026-11-14T02:47:05.929Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:46:58.909Z",
+      "updated_at": "2026-11-14T03:04:21.329Z"
+    }
+  ]
+}
+
+{
+  "success": true,
+  "count": 60,
+  "data": [
+    {
+      "id": "0a83c630-21b1-47ed-8881-330c48f031a0",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "expense_category": "Marketing",
+      "description": "Digital marketing and promotions",
+      "amount": "10800.00",
+      "expense_date": "2026-10-16T18:30:00.000Z",
+      "payment_method": "Credit Card",
+      "reference_number": "EXP-DEMO-202610-5",
+      "created_at": "2026-11-13T07:55:16.127Z"
+    },

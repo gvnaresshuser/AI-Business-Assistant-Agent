@@ -1,0 +1,144 @@
+Implement JWT invalidation
+The approach:
+1. Add a token_version column to auth_users_biz_agent.
+2. Include the user's token version in the JWT during login.
+3. Increment the version whenever the password changes.
+4. Check the JWT version against the database on every authenticated request.
+5. Reject older tokens with HTTP 401.
+No Gemini API calls required.
+First task – Update NeonDB
+Open the NeonDB SQL Editor and execute:
+ALTER TABLE auth_users_biz_agent
+ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+
+SELECT
+    full_name,
+    email,
+    token_version
+FROM auth_users_biz_agent
+ORDER BY full_name;
+
+[{
+  "full_name": "Demo Administrator",
+  "email": "admin@demo-electronics.local",
+  "token_version": 0
+}, {
+  "full_name": "Demo Manager",
+  "email": "manager@demo-electronics.local",
+  "token_version": 0
+}, {
+  "full_name": "Inventory Executive",
+  "email": "inventory@demo-electronics.local",
+  "token_version": 0
+}, {
+  "full_name": "Sales Executive",
+  "email": "sales@demo-electronics.local",
+  "token_version": 0
+}]
+
+
+---------------------------------------------------------------
+
+Postman verification
+Let's verify that password changes invalidate old sessions.
+
+Test 1 – Login
+
+Log in as Admin using your current password.
+
+POST 
+http://localhost:5000/api/auth/login
+{
+  "email": "admin@demo-electronics.local",
+  "password": "NewAdmin@12345"
+}
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+
+Keep the resulting authentication cookie in Postman.
+
+Test 2 – Change password
+
+http://localhost:5000/api/auth/change-password
+
+{
+  "currentPassword": "NewAdmin@12345",
+  "newPassword": "AnotherNew@123",
+  "confirmPassword": "AnotherNew@123"
+}
+
+{
+  "success": true,
+  "message": "Password changed successfully. Please log in again."
+}
+
+Use the password-change API with a valid current password and a different new password.
+
+Expected:
+- HTTP 200
+- Database token_version increments from 1 to 2 (assuming the previous password change already incremented it to 1).
+Test 3 – Try the old session
+
+Without logging in again, call:
+
+GET http://localhost:5000/api/auth/me
+
+Expected:
+{
+  "success": false,
+  "message": "Session expired. Please log in again."
+}
+
+{
+  "success": false,
+  "message": "Session expired. Please log in again."
+}
+
+
+Test 4 – Login again
+
+Log in with the new password.
+
+Expected: 200 OK.
+
+POST 
+http://localhost:5000/api/auth/login
+{
+  "email": "admin@demo-electronics.local",
+  "password": "AnotherNew@123"
+}
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+{
+  "success": true,
+  "message": "Authenticated user retrieved successfully",
+  "user": {
+    "userId": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "businessId": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "roleId": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "roleName": "Admin"
+  }
+}

@@ -1,0 +1,38 @@
+
+POST 
+http://localhost:5000/api/auth/login
+{
+  "email": "manager@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "email": "sales@demo-electronics.local",
+  "password": "Demo@12345"
+}
+{
+  "email": "admin@demo-electronics.local",
+  "password": "AnotherNew@123"
+}
+
+NewAdmin@12345
+
+{
+  "email": "admin@demo-electronics.local",
+  "password": "NewAdmin@12345"
+}
+
+POST
+http://localhost:5000/api/auth/change-password
+
+{
+  "currentPassword": "WrongPassword@123",
+  "newPassword": "AnotherNew@123",
+  "confirmPassword": "AnotherNew@123"
+}
+
+{
+  "success": false,
+  "message": "Current password is incorrect"
+}
+

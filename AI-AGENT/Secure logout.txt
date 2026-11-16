@@ -1,0 +1,71 @@
+Secure logout
+Test 1 – Login
+1. Send POST http://localhost:5000/api/auth/login.
+
+
+POST 
+http://localhost:5000/api/auth/login
+
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+2. Use your Admin credentials.
+3. Confirm 200 OK and that the access_token cookie is set.
+Test 2 – Logout
+1. Send POST http://localhost:5000/api/auth/logout.
+2. Keep the same Postman cookie jar enabled.
+3. Expected response:
+{
+  "success": true,
+  "message": "Logout successful"
+}
+
+{
+  "success": true,
+  "message": "Logout successful"
+}
+
+GET http://localhost:5000/api/auth/me
+
+{
+  "success": false,
+  "message": "Authentication required. Please log in."
+}
+
+Test 1 – Login
+
+Log in with your Admin account and ensure the authentication cookie is available.
+POST 
+http://localhost:5000/api/auth/login
+
+{
+  "email": "admin@demo-electronics.local",
+  "password": "Demo@12345"
+}
+
+Test 2 – Change password
+
+POST http://localhost:5000/api/auth/change-password
+
+Body → raw → JSON:
+{
+  "currentPassword": "Demo@12345",
+  "newPassword": "NewAdmin@12345",
+  "confirmPassword": "NewAdmin@12345"
+}

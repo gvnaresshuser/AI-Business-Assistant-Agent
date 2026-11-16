@@ -1,0 +1,257 @@
+New Conversation API integration
+
+Next step – Browser testing
+Please test the following:
+1. Open the AI Assistant page.
+2. Click New Conversation.
+3. Check whether a new conversation appears in the sidebar.
+4. Refresh the browser.
+5. Confirm that the new conversation remains in the sidebar.
+This test only calls your backend conversation API. It does not consume Gemini tokens.
+
+Archive Conversation
+
+1. Create a conversation.
+2. Click its Archive icon.
+3. Confirm the archive action.
+4. Verify that it disappears from Recent Conversations.
+Note: The conversation is archived, not permanently deleted. We'll implement the Archived Conversations view and Restore option next.
+
+Archived Conversations and Restore
+
+Browser testing
+Please test these steps:
+1. Open AI Assistant.
+2. Click Archived in the sidebar.
+3. Verify that the previously archived conversation appears.
+4. Click the Restore icon.
+5. Verify that it disappears from Archived Conversations.
+6. Click Recent and confirm that the restored conversation appears there.
+Important: This should work without consuming any Gemini API tokens.
+
+Delete Conversation
+
+
+Conversation title automation
+
+Currently, new conversations start with the title New Conversation. We want the application to automatically use the user's first question as the conversation title.
+
+For example:
+First user question	Conversation title
+What are our total sales this month?	Total Sales This Month
+Which products are running low on stock?	Low Stock Products
+Who are our top 10 customers?	Top 10 Customers
+
+Automatic Conversation Titles are now implemented.
+Step 2: Test in the browser
+Please test the following:
+1. Open AI Assistant.
+2. Click New Conversation.
+3. Ask: What are our total sales this month?
+4. Wait for the AI response.
+5. Check the Recent Conversations sidebar.
+
+The new conversation title starts with "What are ou..." instead of "New Conversation".
+The AI response is displayed with properly formatted Markdown and a sales table.
+Existing conversations remain available.
+Rename, Archive and Delete controls are still working in the sidebar.
+
+Copy AI Response
+
+Here is the sales performance for the latest recorded month (**October 2026**):
+
+### **Current Month Sales Summary (October 2026)**
+* **Total Sales Revenue:** ₹2,48,74,340.68
+* **Total Sales Orders:** 124 orders
+* **Average Order Value (AOV):** ₹2,00,599.52
+
+---
+
+### **Recent Monthly Sales Overview**
+
+| Month | Total Orders | Total Revenue (₹) | Average Order Value (₹) |
+| :--- | :---: | :---: | :---: |
+| **October 2026** | 124 | ₹2,48,74,340.68 | ₹2,00,599.52 |
+| **September 2026** | 125 | ₹2,56,87,542.83 | ₹2,05,500.34 |
+| **August 2026** | 129 | ₹2,46,71,764.72 | ₹1,91,253.99 |
+| **July 2026** | 124 | ₹2,53,48,405.96 | ₹2,04,422.63 |
+| **June 2026** | 125 | ₹2,54,19,066.41 | ₹2,03,352.53 |
+
+---
+*Note: Revenue figures represent total sales order value and do not account for net profits or business expenses.*
+
+Regenerate AI Response
+
+Next: Regenerate AI Response
+Let's add a Regenerate button beside Copy.
+
+When clicked, it will:
+1. Re-submit the original user question.
+2. Generate a fresh AI response.
+3. Replace the previous assistant response.
+4. Preserve the conversation history.
+This will consume additional Gemini tokens each time it is used.
+
+How Regenerate will work
+1. Retrieve the selected conversation history.
+2. Identify the most recent user question and previous AI response.
+3. Send the original question to Gemini with the appropriate conversation history.
+4. Update the existing assistant message with the new answer.
+5. Refresh the frontend response.
+
+Mobile responsiveness
+
+Mobile responsiveness – implementation complete
+Your AI Business Assistant now has:
+- Mobile hamburger menu.
+- Open/close sidebar functionality.
+- Background overlay when the sidebar is open.
+- Automatic closing after selecting a conversation.
+- Automatic closing after creating a new conversation.
+- Existing desktop sidebar layout preserved.
+
+Message Timestamps
+We'll display a small timestamp below each message, for example:
+What are our total sales?
+
+10:32 AM
+Your total sales are ₹30.23 Crore.
+10:32 AM
+
+We can use the existing created_at field. No backend changes or Gemini API calls are required.
+
+Export Conversation
+
+adding an Export Conversation button to download chat history as a .txt file.
+
+It will include:
+- Conversation title.
+- User questions.
+- AI responses.
+- Message timestamps.
+No Gemini API calls or backend changes are required.
+
+New Chat confirmation
+
+SweetAlert2 integration checklist
+
+New Conversation – confirmation
+Delete Conversation – red warning confirmation
+Archive Conversation – confirmation
+Rename Conversation – validated input popup
+Copy Response – success toast
+Export Conversation – success toast
+Restore Conversation – success toast
+
+
+npm install jspdf jspdf-autotable
+
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name ILIKE '%biz_agent%'
+ORDER BY table_name;
+
+
+[{
+  "table_name": "agent_knowledge_chunks_biz_agent"
+}, {
+  "table_name": "agent_messages_biz_agent"
+}, {
+  "table_name": "agent_reports_biz_agent"
+}, {
+  "table_name": "agent_sessions_biz_agent"
+}, {
+  "table_name": "agent_tool_logs_biz_agent"
+}, {
+  "table_name": "audit_logs_biz_agent"
+}, {
+  "table_name": "auth_roles_biz_agent"
+}, {
+  "table_name": "auth_users_biz_agent"
+}, {
+  "table_name": "biz_businesses_biz_agent"
+}, {
+  "table_name": "cat_categories_biz_agent"
+}, {
+  "table_name": "cust_customers_biz_agent"
+}, {
+  "table_name": "fin_expenses_biz_agent"
+}, {
+  "table_name": "inv_inventory_biz_agent"
+}, {
+  "table_name": "inv_stock_movements_biz_agent"
+}, {
+  "table_name": "prod_products_biz_agent"
+}, {
+  "table_name": "purch_purchase_items_biz_agent"
+}, {
+  "table_name": "purch_purchase_orders_biz_agent"
+}, {
+  "table_name": "sales_order_items_biz_agent"
+}, {
+  "table_name": "sales_orders_biz_agent"
+}, {
+  "table_name": "sales_payments_biz_agent"
+}, {
+  "table_name": "sales_refunds_biz_agent"
+}, {
+  "table_name": "vend_vendors_biz_agent"
+}]
+
+
+Step 8 – Test the Create Product API
+Before building the frontend form, let's verify the POST endpoint.
+
+Use Postman or Thunder Client.
+
+Request
+POST 
+http://localhost:5000/api/products
+
+
+Headers
+Content-Type: application/json
+
+
+Use your existing authenticated session/cookie.
+
+Request body
+{
+  "product_name": "Test Bluetooth Speaker",
+  "sku": "TEST-BT-001",
+  "brand": "TestBrand",
+  "model_number": "TB-100",
+  "description": "Test product created through the API",
+  "unit_price": 2500,
+  "unit_cost": 1800,
+  "reorder_level": 5,
+  "is_active": true
+}
+
+
+Enter this sample product:
+Field	Value
+
+Product Name	Logitech Wireless Mouse
+SKU	LOG-MOUSE-001
+Category	Select an existing category
+Brand	Logitech
+Model Number	M185
+Reorder Level	10
+Unit Price	899
+Unit Cost	550
+Product Status	Active
+Description	Wireless optical mouse
+
+
+Next improvement
+I suggest adding Product Restore functionality so an Admin can reactivate an accidentally deactivated product.
+
+After that, we can proceed to Product Category Management.
+
+Would you like to implement Restore Product first?
+
+
+Absolutely! We can postpone Product Restore and Category Management.

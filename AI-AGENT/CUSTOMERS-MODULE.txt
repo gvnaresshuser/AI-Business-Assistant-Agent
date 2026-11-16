@@ -1,0 +1,237 @@
+SELECT
+    column_name,
+    data_type,
+    character_maximum_length,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'cust_customers_biz_agent'
+ORDER BY ordinal_position;
+
+[{
+  "column_name": "id",
+  "data_type": "uuid",
+  "character_maximum_length": null,
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "character_maximum_length": null,
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "column_name": "customer_name",
+  "data_type": "character varying",
+  "character_maximum_length": 150,
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "column_name": "email",
+  "data_type": "character varying",
+  "character_maximum_length": 150,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "phone",
+  "data_type": "character varying",
+  "character_maximum_length": 30,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "address",
+  "data_type": "text",
+  "character_maximum_length": null,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "city",
+  "data_type": "character varying",
+  "character_maximum_length": 100,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "state",
+  "data_type": "character varying",
+  "character_maximum_length": 100,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "pincode",
+  "data_type": "character varying",
+  "character_maximum_length": 15,
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "column_name": "customer_type",
+  "data_type": "character varying",
+  "character_maximum_length": 30,
+  "is_nullable": "YES",
+  "column_default": "'Regular'::character varying"
+}, {
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "character_maximum_length": null,
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "column_name": "updated_at",
+  "data_type": "timestamp with time zone",
+  "character_maximum_length": null,
+  "is_nullable": "YES",
+  "column_default": "now()"
+}]
+
+
+SELECT
+    tc.constraint_name,
+    tc.constraint_type,
+    kcu.column_name,
+    ccu.table_name AS referenced_table,
+    ccu.column_name AS referenced_column
+FROM information_schema.table_constraints tc
+LEFT JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+    AND tc.table_schema = kcu.table_schema
+LEFT JOIN information_schema.constraint_column_usage ccu
+    ON tc.constraint_name = ccu.constraint_name
+    AND tc.table_schema = ccu.table_schema
+WHERE tc.table_schema = 'public'
+  AND tc.table_name = 'cust_customers_biz_agent'
+ORDER BY tc.constraint_type, tc.constraint_name;
+[{
+  "constraint_name": "cust_customers_biz_agent_business_id_not_null",
+  "constraint_type": "CHECK",
+  "column_name": null,
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "business_id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_customer_name_not_null",
+  "constraint_type": "CHECK",
+  "column_name": null,
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "customer_name"
+}, {
+  "constraint_name": "cust_customers_biz_agent_id_not_null",
+  "constraint_type": "CHECK",
+  "column_name": null,
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_business_id_fkey",
+  "constraint_type": "FOREIGN KEY",
+  "column_name": "business_id",
+  "referenced_table": "biz_businesses_biz_agent",
+  "referenced_column": "id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_pkey",
+  "constraint_type": "PRIMARY KEY",
+  "column_name": "id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_business_id_id_key",
+  "constraint_type": "UNIQUE",
+  "column_name": "business_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "business_id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_business_id_id_key",
+  "constraint_type": "UNIQUE",
+  "column_name": "business_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_business_id_id_key",
+  "constraint_type": "UNIQUE",
+  "column_name": "id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "business_id"
+}, {
+  "constraint_name": "cust_customers_biz_agent_business_id_id_key",
+  "constraint_type": "UNIQUE",
+  "column_name": "id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id"
+}]
+
+
+SELECT
+    tc.constraint_name,
+    tc.table_name,
+    kcu.column_name,
+    ccu.table_name AS referenced_table,
+    ccu.column_name AS referenced_column,
+    rc.delete_rule
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+    AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage ccu
+    ON tc.constraint_name = ccu.constraint_name
+    AND tc.table_schema = ccu.table_schema
+JOIN information_schema.referential_constraints rc
+    ON tc.constraint_name = rc.constraint_name
+    AND tc.constraint_schema = rc.constraint_schema
+WHERE tc.table_schema = 'public'
+  AND tc.table_name = 'sales_orders_biz_agent';
+  
+  [{
+  "constraint_name": "sales_orders_biz_agent_business_id_fkey",
+  "table_name": "sales_orders_biz_agent",
+  "column_name": "business_id",
+  "referenced_table": "biz_businesses_biz_agent",
+  "referenced_column": "id",
+  "delete_rule": "NO ACTION"
+}, {
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey",
+  "table_name": "sales_orders_biz_agent",
+  "column_name": "business_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "business_id",
+  "delete_rule": "NO ACTION"
+}, {
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey",
+  "table_name": "sales_orders_biz_agent",
+  "column_name": "business_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id",
+  "delete_rule": "NO ACTION"
+}, {
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey",
+  "table_name": "sales_orders_biz_agent",
+  "column_name": "customer_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "business_id",
+  "delete_rule": "NO ACTION"
+}, {
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey",
+  "table_name": "sales_orders_biz_agent",
+  "column_name": "customer_id",
+  "referenced_table": "cust_customers_biz_agent",
+  "referenced_column": "id",
+  "delete_rule": "NO ACTION"
+}]
+
+Test in this order
+Customers testing checklist
+0/10 completed
+
+
+
+[ ] Open Customers from the sidebar.
+[ ] Verify customer listing and total customer count.
+[ ] Search for an existing customer.
+[ ] Filter by Regular, Retail, Wholesale and Corporate.
+[ ] Create a new customer.
+[ ] Open the newly created customer's details.
+[ ] Edit the customer and save changes.
+[ ] Verify the updated information.
+[ ] Check purchase history.
+[ ] Try deleting a customer who has existing sales orders.
+
+Important: Customer deletion should be rejected when sales orders exist, because your database has a foreign-key relationship protecting those orders.
+
+Please first confirm whether the Customers page opens successfully in Chrome. We can fix any runtime API or UI issues before proceeding to the Sales module.
+

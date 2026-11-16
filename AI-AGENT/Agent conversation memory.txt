@@ -1,0 +1,359 @@
+Agent conversation memory
+
+The next logical step is to make the agent remember the conversation within a session.
+
+For example:
+
+User: What are my total sales?
+
+Agent: Your total sales are ₹30.23 crore.
+
+User: Which month had the highest sales?
+
+Agent: The highest-sales month was December 2025.
+
+The agent should understand that the second question continues the same business discussion.
+
+We'll implement this using your existing agent_sessions_biz_agent and agent_messages_biz_agent tables, without disturbing the working tools.
+
+SELECT
+    table_name,
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name IN (
+    'agent_sessions_biz_agent',
+    'agent_messages_biz_agent'
+)
+ORDER BY table_name, ordinal_position;
+
+[{
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "session_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "user_id",
+  "data_type": "uuid",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "sender_type",
+  "data_type": "character varying",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "message_content",
+  "data_type": "text",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "message_metadata",
+  "data_type": "jsonb",
+  "is_nullable": "YES",
+  "column_default": "'{}'::jsonb"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "user_id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": null
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "session_title",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "session_status",
+  "data_type": "character varying",
+  "is_nullable": "YES",
+  "column_default": "'Active'::character varying"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "started_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "last_activity_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "ended_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "metadata",
+  "data_type": "jsonb",
+  "is_nullable": "YES",
+  "column_default": "'{}'::jsonb"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "column_name": "updated_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": "now()"
+}]
+
+--------------------------------------------
+
+
+SELECT
+    tc.table_name,
+    tc.constraint_name,
+    cc.check_clause
+FROM information_schema.table_constraints tc
+JOIN information_schema.check_constraints cc
+    ON cc.constraint_catalog = tc.constraint_catalog
+    AND cc.constraint_schema = tc.constraint_schema
+    AND cc.constraint_name = tc.constraint_name
+WHERE tc.table_schema = 'public'
+  AND tc.table_name IN (
+      'agent_sessions_biz_agent',
+      'agent_messages_biz_agent'
+  )
+  AND tc.constraint_type = 'CHECK';
+
+
+[{
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_sender_check",
+  "check_clause": "((sender_type)::text = ANY ((ARRAY['User'::character varying, 'Assistant'::character varying, 'System'::character varying, 'Tool'::character varying])::text[]))"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_id_not_null",
+  "check_clause": "id IS NOT NULL"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_business_id_not_null",
+  "check_clause": "business_id IS NOT NULL"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_session_id_not_null",
+  "check_clause": "session_id IS NOT NULL"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_sender_type_not_null",
+  "check_clause": "sender_type IS NOT NULL"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_message_content_not_null",
+  "check_clause": "message_content IS NOT NULL"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_status_check",
+  "check_clause": "((session_status)::text = ANY ((ARRAY['Active'::character varying, 'Completed'::character varying, 'Archived'::character varying])::text[]))"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_biz_agent_user_id_not_null",
+  "check_clause": "user_id IS NOT NULL"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_biz_agent_id_not_null",
+  "check_clause": "id IS NOT NULL"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_biz_agent_business_id_not_null",
+  "check_clause": "business_id IS NOT NULL"
+}]
+
+
+SELECT
+    conrelid::regclass AS table_name,
+    pg_get_constraintdef(oid) AS constraint_definition
+FROM pg_constraint
+WHERE conrelid IN (
+    'agent_sessions_biz_agent'::regclass,
+    'agent_messages_biz_agent'::regclass
+);
+
+[{
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "NOT NULL business_id"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "NOT NULL id"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "PRIMARY KEY (id)"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "FOREIGN KEY (user_id) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "NOT NULL user_id"
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "constraint_definition": "CHECK (((session_status)::text = ANY ((ARRAY['Active'::character varying, 'Completed'::character varying, 'Archived'::character varying])::text[])))"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "NOT NULL business_id"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "NOT NULL id"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "NOT NULL message_content"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "PRIMARY KEY (id)"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "NOT NULL sender_type"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "FOREIGN KEY (session_id) REFERENCES agent_sessions_biz_agent(id)"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "NOT NULL session_id"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "FOREIGN KEY (user_id) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "table_name": "agent_messages_biz_agent",
+  "constraint_definition": "CHECK (((sender_type)::text = ANY ((ARRAY['User'::character varying, 'Assistant'::character varying, 'System'::character varying, 'Tool'::character varying])::text[])))"
+}]
+
+
+SELECT
+    id,
+    full_name,
+    email,
+    role_id,
+    is_active
+FROM auth_users_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+ORDER BY created_at;
+
+[{
+  "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+  "full_name": "Demo Administrator",
+  "email": "admin@demo-electronics.local",
+  "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+  "is_active": true
+}, {
+  "id": "b695b92a-adcc-46c4-a052-26ba39417282",
+  "full_name": "Inventory Executive",
+  "email": "inventory@demo-electronics.local",
+  "role_id": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+  "is_active": true
+}, {
+  "id": "9f9d7d19-e03f-4677-a646-ce48102be506",
+  "full_name": "Sales Executive",
+  "email": "sales@demo-electronics.local",
+  "role_id": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+  "is_active": true
+}, {
+  "id": "3b43e315-5954-457b-bc62-8a558f1c478e",
+  "full_name": "Demo Manager",
+  "email": "manager@demo-electronics.local",
+  "role_id": "199a9c3e-eba6-4505-8fbf-e2cae1db746b",
+  "is_active": true
+}]
+
+
+Prepare the repository layer
+Our next components will be:
+1. session.repository.ts – create and retrieve conversations.
+2. message.repository.ts – save and retrieve messages.
+3. session.service.ts – manage conversation operations.
+4. Update the agent service to load conversation history.
+
+Create session.repository.ts
+Create this new file:
+
+backend/src/repositories/session.repository.ts
+
+
+
+Controller
+    |
+    v
+session.service.ts
+    |
+    +---------------------------+
+    |                           |
+    v                           v
+session.repository.ts    message.repository.ts
+    |                           |
+    +-------------+-------------+
+                  |
+                  v
+               NeonDB
+
+
+POST /api/agent/chat
+        |
+        v
+Create session
+        |
+        v
+Save user message
+        |
+        v
+Retrieve conversation history
+        |
+        v
+Call Gemini
+        |
+        v
+Save assistant response
+        |
+        v
+Return sessionId + answer

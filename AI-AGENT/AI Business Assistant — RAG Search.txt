@@ -1,0 +1,564 @@
+AI Business Assistant — RAG Search
+AI Business Assistant — RAG Search
+Business knowledge documents
+
+Product manuals, warranty policies, return policies, vendor agreements and business procedures.
+
+
+Document processing
+
+Extract text → split into chunks → generate embeddings.
+
+
+NeonDB + pgvector
+
+Store document chunks, metadata and vector embeddings.
+
+
+Semantic search and retrieval
+
+Find the most relevant document chunks for a user's question.
+
+
+Gemini generates the answer
+
+Answers using retrieved document content, with relevant source references.
+
+
+Example questions for students
+- What is our warranty policy for Samsung televisions?
+- Can a customer return a product after 15 days?
+- What are the warranty conditions for laptops?
+- What are the payment terms agreed with our vendors?
+- Find the installation instructions for a particular product.
+We will retain your existing SQL-based tools for sales, inventory, expenses and analytics. RAG will handle document-based knowledge rather than replacing those tools. This is the distinction we want students to understand. 
+Technologies
+Component	Technology
+Database	Existing Neon PostgreSQL
+Vector search	pgvector
+Embeddings	Google Gemini embedding model
+Backend	Node.js + Express + TypeScript
+Validation	Zod
+AI response	Existing Gemini integration
+
+We will implement document upload, text extraction, chunking, embedding generation, semantic retrieval and a RAG search API. We will keep Gemini API usage controlled by generating embeddings only when documents are added or updated.
+Step 1 — Check pgvector in NeonDB
+Before writing code, open your NeonDB SQL Editor and execute:
+SELECT
+    extname,
+    extversion
+FROM pg_extension
+WHERE extname = 'vector';
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+SELECT
+    extname,
+    extversion
+FROM pg_extension
+WHERE extname = 'vector';
+
+[{
+  "extname": "vector",
+  "extversion": "0.8.7"
+}]
+
+Create the RAG document storage table
+We will store document chunks and their embeddings in a separate table, keeping your existing business tables untouched.
+
+Before creating it, we need to choose the embedding dimension. Let's use Google Gemini gemini-embedding-001 with 768 dimensions for this project.
+
+Run this SQL in NeonDB:
+
+CREATE TABLE IF NOT EXISTS agent_knowledge_chunks_biz_agent (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    business_id UUID NOT NULL
+        REFERENCES biz_businesses_biz_agent(id),
+
+    document_name VARCHAR(255) NOT NULL,
+
+    chunk_index INTEGER NOT NULL,
+
+    chunk_content TEXT NOT NULL,
+
+    embedding VECTOR(768) NOT NULL,
+
+    metadata JSONB DEFAULT '{}'::jsonb,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+Then create an index for business-level document retrieval:
+CREATE INDEX IF NOT EXISTS
+idx_knowledge_chunks_business_biz_agent
+ON agent_knowledge_chunks_biz_agent(business_id);
+
+And a vector similarity index:
+CREATE INDEX IF NOT EXISTS
+idx_knowledge_chunks_embedding_biz_agent
+ON agent_knowledge_chunks_biz_agent
+USING hnsw (embedding vector_cosine_ops);
+
+Why 768 dimensions? Gemini's embedding model supports configurable output dimensions. We will explicitly request 768 dimensions when generating embeddings so they match the database column.
+
+
+Install the embedding SDK
+We will use Google's existing @google/genai SDK. No additional AI package is required.
+
+First, let's check the version already installed.
+
+In your backend CMD terminal, run:
+npm list @google/genai
+
+
+E:\AI-Business-Assistant-Agent\backend>npm list @google/genai
+backend@1.0.0 E:\AI-Business-Assistant-Agent\backend
+`-- @google/genai@3.3.0
+
+
+E:\AI-Business-Assistant-Agent\backend>
+
+Create the embedding service file
+Create this new file:
+backend/src/services/embedding.service.ts
+
+What this service does:
+1. Connects to Gemini using your existing API key.
+2. Accepts text as input.
+3. Generates a numerical vector with 768 dimensions.
+4. Returns that vector for storage in PostgreSQL using pgvector.
+For now, don't execute any Gemini API calls. We'll first check the TypeScript build without consuming API quota.
+
+Create the knowledge repository
+Next, we'll create a repository responsible for saving document chunks and their embeddings into NeonDB.
+
+Create this file:
+backend/src/repositories/knowledge.repository.ts
+
+
+Create the text chunking utility
+Create this file:
+backend/src/utils/textChunker.ts
+
+Create the RAG ingestion service
+Now we'll connect these three components.
+
+Create:
+backend/src/services/knowledge-ingestion.service.ts
+
+Create the knowledge search repository
+This repository will compare a user's question embedding with stored document embeddings using cosine similarity.
+
+Create:
+backend/src/repositories/knowledge.repository.ts
+
+We now have both sides of RAG:
+- Ingestion: Documents → chunks → embeddings → NeonDB.
+- Retrieval: Question embedding → cosine similarity search → relevant chunks.
+Step 10 — Create the RAG search service
+This service will convert the user's question into an embedding and retrieve the five most relevant document chunks.
+
+Create:
+backend/src/services/knowledge-search.service.ts
+
+Understand the workflow
+Suppose a user asks:
+
+What is the warranty period for Samsung televisions?
+1. Gemini converts the question into a 768-dimensional vector.
+2. PostgreSQL compares it against stored document vectors.
+3. The five most relevant chunks are returned.
+4. The next stage will pass these chunks to Gemini to generate an answer grounded in the documents.
+
+
+Connect RAG with Gemini
+The next stage is to generate a natural-language answer using the retrieved document chunks.
+
+For example:
+
+User question: What is the warranty period for Samsung televisions?
+
+RAG workflow:
+1. Retrieve relevant warranty document chunks.
+2. Pass those chunks and the question to Gemini.
+3. Generate an answer based on the retrieved content.
+4. Return the answer along with its source document references.
+
+Create the RAG answer service
+Create:
+backend/src/services/knowledge-answer.service.ts
+
+What have we achieved?
+Our RAG pipeline now has these stages:
+1. Document ingestion.
+2. Text chunking.
+3. Embedding generation.
+4. Vector storage in NeonDB.
+5. Semantic search.
+6. Context retrieval.
+7. Gemini answer generation with source references.
+Important: This code will not call Gemini until the function is actually executed. We are only checking TypeScript compilation now.
+
+Your RAG pipeline is now structurally complete, from document ingestion through Gemini answer generation.
+
+Next, let's expose it through REST APIs so we can demonstrate it using Postman before connecting React.
+Step 12 — Create the knowledge controller
+Create:
+backend/src/controllers/knowledge.controller.ts
+
+What these two controller functions do:
+- uploadKnowledgeDocument — accepts document text, generates embeddings and saves the chunks.
+- searchBusinessKnowledge — accepts a question, retrieves relevant chunks and generates an answer using Gemini.
+Both use the authenticated user's businessId, so document retrieval remains business-scoped.
+
+Create the knowledge routes
+Create a new file:
+backend/src/routes/knowledge.routes.ts
+
+These routes will provide:
+Method	Endpoint	Purpose
+POST	/api/knowledge/documents	Add a knowledge document
+POST	/api/knowledge/search	Search business knowledge
+
+One important note before we test RAG: We have built the basic pipeline, but still need to test actual embedding generation, document ingestion, vector retrieval and answer generation. We'll also verify that documents cannot be retrieved across businesses.
+
+After those tests, we'll be ready to integrate RAG search into the React frontend.
+
+RAG testing
+Before moving to React, we should complete these tests:
+1. Verify the knowledge table is accessible.
+2. Test document ingestion using Gemini embeddings.
+3. Verify stored chunks and vector dimensions.
+4. Test semantic retrieval.
+5. Test Gemini-generated answers with source references.
+6. Verify business-level data isolation.
+Step 15 — Verify the knowledge table
+Open NeonDB SQL Editor and execute:
+
+SELECT
+    COUNT(*) AS total_chunks,
+    COUNT(DISTINCT business_id) AS businesses,
+    COUNT(*) FILTER (
+        WHERE vector_dims(embedding) = 768
+    ) AS valid_embeddings
+FROM agent_knowledge_chunks_biz_agent;
+
+[{
+  "total_chunks": 0,
+  "businesses": 0,
+  "valid_embeddings": 0
+}]
+
+
+Prepare our first RAG test document
+Let's use a simple electronics-store warranty policy. This will help demonstrate RAG to students with a realistic business example.
+
+In Postman, select:
+
+Method: POST
+
+URL:
+http://localhost:5000/api/knowledge/documents
+
+
+Authorization: Use your existing Admin or Manager login cookie (access_token).
+
+Body → raw → JSON:
+{
+  "documentName": "Electronics Store Warranty Policy",
+  "content": "ELECTRONICS STORE WARRANTY POLICY\n\n1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase.\n\n2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase.\n\n3. Dell laptops carry a manufacturer warranty of 1 year. The warranty covers manufacturing defects but does not cover accidental physical damage or liquid damage.\n\n4. Customers must provide the original purchase invoice when requesting warranty service.\n\n5. Warranty claims must be submitted through an authorised service centre.\n\n6. Accessories such as cables, chargers and headphones carry a 6-month manufacturer warranty."
+}
+
+GET
+http://localhost:5000/api/auth/me
+
+{
+  "success": true,
+  "message": "Authenticated user retrieved successfully",
+  "user": {
+    "userId": "9f9d7d19-e03f-4677-a646-ce48102be506",
+    "businessId": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "roleId": "19001740-a6e2-44cb-a6ba-4a9ae6f51d73",
+    "roleName": "Staff"
+  }
+}
+
+POST 
+http://localhost:5000/api/auth/login
+{
+  "email": "admin@demo-electronics.local",
+  "password": "AnotherNew@123"
+}
+
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "role_id": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "full_name": "Demo Administrator",
+    "email": "admin@demo-electronics.local",
+    "role_name": "Admin",
+    "business_name": "Demo Electronics Store"
+  }
+}
+
+GET http://localhost:5000/api/auth/me
+
+{
+  "success": true,
+  "message": "Authenticated user retrieved successfully",
+  "user": {
+    "userId": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "businessId": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "roleId": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "roleName": "Admin"
+  }
+}
+
+
+Method: POST
+
+URL:
+http://localhost:5000/api/knowledge/documents
+
+
+Authorization: Use your existing Admin or Manager login cookie (access_token).
+
+Body → raw → JSON:
+{
+  "documentName": "Electronics Store Warranty Policy",
+  "content": "ELECTRONICS STORE WARRANTY POLICY\n\n1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase.\n\n2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase.\n\n3. Dell laptops carry a manufacturer warranty of 1 year. The warranty covers manufacturing defects but does not cover accidental physical damage or liquid damage.\n\n4. Customers must provide the original purchase invoice when requesting warranty service.\n\n5. Warranty claims must be submitted through an authorised service centre.\n\n6. Accessories such as cables, chargers and headphones carry a 6-month manufacturer warranty."
+}
+
+{
+  "success": true,
+  "message": "Knowledge document processed successfully",
+  "totalChunks": 1
+}
+
+erify the stored embedding
+Open NeonDB SQL Editor and execute:
+
+SELECT
+    id,
+    business_id,
+    document_name,
+    chunk_index,
+    LENGTH(chunk_content) AS content_length,
+    vector_dims(embedding) AS embedding_dimensions,
+    created_at
+FROM agent_knowledge_chunks_biz_agent
+ORDER BY created_at DESC;
+
+[{
+  "id": "ae03a6d1-03bc-4caa-ba02-97842ad5582c",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "content_length": 649,
+  "embedding_dimensions": 768,
+  "created_at": "2026-11-14 09:14:07.985411+00"
+}]
+
+
+Test RAG search through Postman
+Send this request:
+POST http://localhost:5000/api/knowledge/search
+
+
+Use your Admin session cookie.
+
+Body → raw → JSON:
+{
+  "question": "How long can a customer claim warranty coverage for a Samsung television?"
+}
+{
+  "success": true,
+  "message": "Knowledge search completed successfully",
+  "data": {
+    "answer": "Based on the provided policy, a customer can claim warranty coverage for a Samsung LED or QLED television for **2 years from the date of purchase**.",
+    "sources": [
+      {
+        "documentName": "Electronics Store Warranty Policy",
+        "chunkIndex": 0,
+        "similarity": 0.7473374551325438
+      }
+    ]
+  }
+}
+
+RAG execution results
+1. User question
+   
+   How long can a customer claim warranty coverage for a Samsung television?
+2. Embedding generation
+   
+   Gemini converted the question into a 768-dimensional vector.
+3. Vector similarity search
+   
+   NeonDB retrieved the relevant document chunk.
+   74.73%
+   Cosine similarity score (approximately)
+4. Gemini answer generation
+   
+   Samsung LED and QLED televisions have a 2-year manufacturer warranty from the purchase date.
+5. Source attribution
+   
+   Electronics Store Warranty Policy, chunk 0.
+   
+   What students should understand
+We now have two different AI capabilities in the same application:
+Function calling	RAG
+Retrieves structured business data	Retrieves document knowledge
+Uses predefined tools and SQL	Uses embeddings and vector search
+Example: What are today's sales?	Example: What is the warranty policy?
+
+Both can work together in one AI Business Assistant.
+Next: Three important RAG tests
+Before starting the frontend, I recommend testing:
+1. Different wording: Ask about accidental damage to Dell laptops.
+2. Information not available: Ask about a policy that does not exist in the uploaded document.
+3. Business isolation: Verify that one business cannot retrieve another business's documents.
+
+
+Test semantic search with a different question
+In Postman, send:
+POST http://localhost:5000/api/knowledge/search
+
+
+Body:
+{
+  "question": "Will the company replace my Dell laptop if I accidentally spill water on it?"
+}
+
+{
+  "success": true,
+  "message": "Knowledge search completed successfully",
+  "data": {
+    "answer": "No. According to the Electronics Store Warranty Policy, Dell laptops carry a 1-year warranty that covers manufacturing defects, but it explicitly does not cover accidental physical damage or liquid damage.",
+    "sources": [
+      {
+        "documentName": "Electronics Store Warranty Policy",
+        "chunkIndex": 0,
+        "similarity": 0.6478348343674066
+      }
+    ]
+  }
+}
+
+Your RAG system correctly understood a question expressed differently from the original document.
+Test results
+Item	Result
+Question	Dell laptop accidental water damage
+Retrieved document	Electronics Store Warranty Policy
+Similarity	64.78%
+Warranty period	1 year
+Accidental damage	Not covered
+Liquid damage	Not covered
+
+This demonstrates an important RAG concept: semantic search finds meaning, not just matching keywords.
+Step 22 — Test when information is unavailable
+Now let's test whether the AI avoids inventing information.
+
+Send this request through Postman:
+POST http://localhost:5000/api/knowledge/search
+
+
+Body:
+{
+  "question": "Does the store provide a 5-year extended warranty for Sony televisions?"
+}
+
+{
+  "success": true,
+  "message": "Knowledge search completed successfully",
+  "data": {
+    "answer": "Based on the supplied business knowledge, there is no information available regarding a 5-year extended warranty for Sony televisions.",
+    "sources": [
+      {
+        "documentName": "Electronics Store Warranty Policy",
+        "chunkIndex": 0,
+        "similarity": 0.6970516423576418
+      }
+    ]
+  }
+}
+
+This is a particularly important result for teaching students: RAG should know when the available documents do not contain an answer.
+Test results
+Item	Result
+Question	Sony 5-year extended warranty
+Sony warranty information	Not available
+AI response	Correctly stated information is unavailable
+Hallucinated warranty period	None
+Source reference	Provided
+
+One observation: the search still retrieved the existing warranty document with a similarity score of 69.71%. That is expected because the document discusses warranties generally. Gemini correctly recognised that it did not contain the specific Sony warranty information.
+
+For production, we should add a similarity threshold so weakly relevant results can be rejected before sending them to Gemini.
+RAG implementation status
+AI Business Assistant — RAG
+pgvector enabled in NeonDB
+
+768-dimensional Gemini embeddings
+
+Document chunking
+
+Knowledge document storage
+
+Semantic vector search
+
+Gemini answer generation
+
+Source references
+
+Three Postman search tests
+
+
+Business-isolation testing and production safeguards remain.
+
+
+SELECT
+    business_id,
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+GROUP BY business_id, document_name;
+
+[{
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Electronics Store Warranty Policy",
+  "total_chunks": 1
+}]
+
+
+RAG backend milestone
+AI Business Assistant — RAG
+Core functionality working
+NeonDB pgvector 0.8.7 configured
+
+768-dimensional Gemini embeddings generated
+
+Document chunking and storage
+
+Cosine similarity search
+
+Gemini answer generation
+
+Source document references
+
+Relevant information retrieval tested
+
+Unavailable information handling tested
+
+Business-scoped retrieval verified
+
+
+Before frontend: three safeguards I recommend
+1. Similarity threshold: Reject irrelevant document matches instead of sending them to Gemini.
+2. Duplicate document handling: Prevent repeated uploads from creating duplicate chunks.
+3. Document management: Provide a way to list and delete uploaded knowledge documents.
+

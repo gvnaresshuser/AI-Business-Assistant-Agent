@@ -1,0 +1,115 @@
+# Continue AI Business Assistant Agent Development
+
+I want to continue developing my existing **AI Business Assistant Agent** project.
+
+## Project Location
+- Root: `E:\AI-Business-Assistant-Agent`
+- Backend: `E:\AI-Business-Assistant-Agent\backend`
+- Frontend: `E:\AI-Business-Assistant-Agent\frontend`
+
+## Technology Stack
+**Frontend**
+- React 19
+- TypeScript
+- Vite 8
+- Tailwind CSS v4
+- React Router
+- Axios
+- Lucide React
+- Recharts
+- React Markdown
+
+**Backend**
+- Node.js
+- Express
+- TypeScript
+- PostgreSQL (NeonDB)
+- Gemini API using `@google/genai`
+- pgvector
+
+## Existing Completed Modules
+
+1. Authentication and role-based access control.
+2. Dashboard with KPIs and charts.
+3. AI Assistant with Gemini tool calling and 15 predefined business tools.
+4. RAG Knowledge module:
+   - Text document upload.
+   - Text chunking and embedding generation.
+   - PostgreSQL vector storage.
+   - Semantic search.
+   - Gemini-powered question answering.
+   - Conflicting information detection.
+   - Structured JSON responses.
+   - Relevant source selection.
+   - Knowledge document listing and deletion.
+5. Products module:
+   - Product listing.
+   - Search.
+   - Active/inactive filters.
+   - Product creation.
+   - Product details.
+   - Product editing.
+   - Product deletion.
+
+The current RAG implementation has been tested successfully. Do not unnecessarily modify completed modules.
+
+## Next Development Objective
+
+Complete the following three modules:
+
+### 1. Customers Module
+- Customer listing.
+- Customer search.
+- Customer details.
+- Customer purchase history.
+- Customer creation, editing and deletion.
+- Total and active customer statistics.
+
+### 2. Sales Module
+- Sales transaction listing.
+- Invoice/order number.
+- Customer information.
+- Products purchased.
+- Quantity and total amount.
+- Payment status.
+- Date filters.
+- Sales transaction details.
+
+### 3. Analytics Module
+- Total revenue.
+- Total orders.
+- Average order value.
+- Monthly revenue chart.
+- Top-selling products.
+- Best customers.
+- Payment method distribution.
+- Sales performance trends.
+
+Use Recharts for visualizations.
+
+## Important Development Instructions
+
+1. First inspect the existing database tables, backend APIs, frontend structure and available demo data.
+2. Reuse existing tables, APIs and demo records wherever possible.
+3. Do not create duplicate tables or unnecessary demo data.
+4. Follow the existing project architecture and UI design.
+5. Maintain the existing authentication and business-level data isolation.
+6. Use parameterized SQL queries.
+7. Do not unnecessarily rewrite working files.
+8. Give me exact file paths and complete code changes where required.
+9. Explain the changes in simple language.
+10. Work incrementally, one step at a time.
+11. After each major change, ask me to run `npm run build`.
+12. I will reply `nep` when the build succeeds. Wait for my confirmation before proceeding to the next step.
+
+## Development Order
+
+1. Customers
+2. Sales
+3. Analytics
+
+**Important:** Start by inspecting the existing Customers database schema and backend implementation. Do not start writing code until the existing implementation has been examined.
+
+The objective is to make all three modules functional, professionally designed and ready for a business demonstration, while preserving the existing working AI Assistant and RAG functionality.
+
+Project branding: **AI Business Assistant Agent**.

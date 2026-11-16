@@ -1,0 +1,73 @@
+AI Agent Core
+
+Step 1 – Create Gemini Configuration
+We have already installed the @google/genai package and configured GEMINI_API_KEY in .env.
+
+Create this file:
+
+backend/src/config/gemini.ts
+
+Add the following code:
+
+import { GoogleGenAI } from "@google/genai";
+import { env } from "./env.js";
+
+// Initialize Gemini AI client
+export const gemini = new GoogleGenAI({
+  apiKey: env.GEMINI_API_KEY
+});
+
+// Gemini model configuration
+export const GEMINI_MODEL = "gemini-2.5-flash";
+
+
+Start the backend server
+
+npm run dev
+
+POST
+API endpoint
+
+http://localhost:5000/api/agent/chat
+
+Headers
+Key	Value
+Content-Type	application/json
+
+
+Body → raw → JSON
+{
+  "question": "Hello! What are your responsibilities as an AI Business Assistant for an electronics business?"
+}
+
+Expected response
+You should receive a JSON response similar to:
+{
+  "success": true,
+  "question": "Hello! What are your responsibilities as an AI Business Assistant for an electronics business?",
+  "answer": "I am your AI Business Assistant..."
+}
+
+
+Recommended free AI API providers
+
+
+{
+  "success": true,
+  "question": "Hello! What are your responsibilities as an AI Business Assistant for an electronics business?",
+  "answer": "Hello! I am your AI Business Assistant, tailored specifically to help you manage and understand your **Electronics E-Commerce business**. \n\nMy goal is to give you clear visibility into your day-to-day operations and financial performance so you can make informed decisions.\n\nHere is how I can assist you:\n\n### 1. Sales & Revenue Analysis\n* **Top Performers:** Identify your top-selling products, best product categories, and high-value customers.\n* **Sales Trends:** Track sales orders, total revenue, and performance over specific time periods.\n* **Customer Insights:** Help you understand customer buying patterns and order histories.\n\n### 2. Inventory & Stock Management\n* **Low Stock Alerts:** Help you identify products that are running low so you can reorder in time.\n* **Stock Movements:** Track how fast products are selling and monitor overall inventory health across categories.\n\n### 3. Purchases & Vendor Relations\n* **Purchase Orders:** Keep track of open, completed, or pending purchase orders with your suppliers.\n* **Vendor Tracking:** Monitor your purchases from different vendors and supplier activity.\n\n### 4. Financial Health & Expenses\n* **Payment & Refund Tracking:** Distinguish between actual sales payments collected and refunds issued.\n* **Expense Monitoring:** Track your operational business expenses.\n* **Profit vs. Revenue:** Help you understand your numbers accurately (distinguishing top-line revenue from net profit).\n\n---\n\n### How can I help you today?\nFeel free to ask me questions like:\n* *\"What are my top-selling electronics categories?\"*\n* *\"Which products are currently low on stock?\"*\n* *\"Can you help me understand the difference between my sales revenue and actual payments?\"*"
+}
+
+
+What we have completed
+Stage 1 – AI Agent Core
+Working
+
+- Gemini client configuration
+- AI Agent Service
+- Business-specific system prompt
+- Gemini prompt integration
+- Agent controller
+- Agent API route
+- Express route registration
+- Postman conversation test

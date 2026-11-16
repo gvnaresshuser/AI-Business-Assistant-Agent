@@ -1,0 +1,329 @@
+Conversation History APIs
+
+Test conversation APIs using Postman
+We'll test each endpoint individually. No Gemini API calls are involved.
+Test 1 – Create a new conversation
+POST
+http://localhost:5000/api/agent/conversations
+
+In Postman:
+- Method: POST
+- Body: None
+- Authorization: Not required for our current demo setup.
+
+{
+  "success": true,
+  "message": "Conversation created successfully",
+  "data": {
+    "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "New Conversation",
+    "session_status": "Active",
+    "started_at": "2026-11-14T02:56:40.570Z",
+    "last_activity_at": "2026-11-14T02:56:40.570Z",
+    "ended_at": null,
+    "metadata": {},
+    "created_at": "2026-11-14T02:56:40.570Z",
+    "updated_at": "2026-11-14T02:56:40.570Z"
+  }
+}
+
+List conversations
+In Postman, create this request:
+
+GET
+ http://localhost:5000/api/agent/conversations
+
+No request body is required.
+
+{
+  "success": true,
+  "count": 3,
+  "data": [
+    {
+      "id": "b9ae3505-6544-4d31-9223-7a3fef7a6098",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:57:17.514Z",
+      "last_activity_at": "2026-11-14T02:57:17.514Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:57:17.514Z",
+      "updated_at": "2026-11-14T02:57:17.514Z"
+    },
+    {
+      "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:56:40.570Z",
+      "last_activity_at": "2026-11-14T02:56:40.570Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:56:40.570Z",
+      "updated_at": "2026-11-14T02:56:40.570Z"
+    },
+    {
+      "id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "What are our total sales?",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:46:58.909Z",
+      "last_activity_at": "2026-11-14T02:47:05.929Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:46:58.909Z",
+      "updated_at": "2026-11-14T02:47:05.929Z"
+    }
+  ]
+}
+
+etrieve conversation messages
+Now let's retrieve the messages from the conversation that we already tested with Gemini.
+
+In Postman:
+GET
+http://localhost:5000/api/agent/conversations/71fc52be-5088-4c29-89aa-b60e45921640/messages
+
+No request body is required.
+
+{
+  "success": true,
+  "sessionId": "71fc52be-5088-4c29-89aa-b60e45921640",
+  "count": 2,
+  "data": [
+    {
+      "id": "bc59f168-d4e7-44b0-ad3e-e8298f0fd804",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "session_id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "sender_type": "User",
+      "message_content": "What are our total sales?",
+      "message_metadata": {},
+      "created_at": "2026-11-14T02:46:59.197Z"
+    },
+    {
+      "id": "3bf398b0-1cf7-4a32-9242-985fcc9eb1f4",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "session_id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "user_id": null,
+      "sender_type": "Assistant",
+      "message_content": "Here is the overall summary of your sales performance:\n\n* **Total Sales Revenue:** ₹30,23,24,537.20\n* **Total Sales Orders:** 1,500 orders\n* **Average Order Value (AOV):** ₹2,01,549.69\n\nIf you would like a detailed breakdown by monthly trends, product categories, or top-selling products, let me know!",
+      "message_metadata": {},
+      "created_at": "2026-11-14T02:47:05.641Z"
+    }
+  ]
+}
+---------------------------
+New API
+PATCH
+ http://localhost:5000/api/agent/conversations/SESSION_ID
+
+Postman → Body → raw → JSON:
+{
+  "title": "November Sales Analysis"
+}
+---------------------------
+
+New API
+PATCH
+ http://localhost:5000/api/agent/conversations/71fc52be-5088-4c29-89aa-b60e45921640
+
+Postman → Body → raw → JSON:
+{
+  "title": "November Sales Analysis"
+}
+
+{
+  "success": true,
+  "message": "Conversation renamed successfully",
+  "data": {
+    "id": "71fc52be-5088-4c29-89aa-b60e45921640",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "November Sales Analysis",
+    "session_status": "Active",
+    "started_at": "2026-11-14T02:46:58.909Z",
+    "last_activity_at": "2026-11-14T02:47:05.929Z",
+    "ended_at": null,
+    "metadata": {},
+    "created_at": "2026-11-14T02:46:58.909Z",
+    "updated_at": "2026-11-14T03:04:21.329Z"
+  }
+}
+
+Archive conversation
+Now let's implement the ability to archive completed conversations without deleting their messages.
+
+The intended behaviour:
+1. Change session status from Active to Archived.
+2. Set ended_at to the current timestamp.
+3. Preserve all conversation messages.
+4. Exclude archived sessions from the active conversation list (we'll update the listing query accordingly).
+-------------------------
+Test using Postman
+PATCH
+http://localhost:5000/api/agent/conversations/4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8/archive
+
+No request body is required.
+
+{
+  "success": true,
+  "message": "Conversation archived successfully",
+  "data": {
+    "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "New Conversation",
+    "session_status": "Archived",
+    "started_at": "2026-11-14T02:56:40.570Z",
+    "last_activity_at": "2026-11-14T02:56:40.570Z",
+    "ended_at": "2026-11-14T03:07:26.812Z",
+    "metadata": {},
+    "created_at": "2026-11-14T02:56:40.570Z",
+    "updated_at": "2026-11-14T03:07:26.812Z"
+  }
+}
+-------------------------
+GET
+http://localhost:5000/api/agent/conversations
+
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": "b9ae3505-6544-4d31-9223-7a3fef7a6098",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:57:17.514Z",
+      "last_activity_at": "2026-11-14T02:57:17.514Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:57:17.514Z",
+      "updated_at": "2026-11-14T02:57:17.514Z"
+    },
+    {
+      "id": "71fc52be-5088-4c29-89aa-b60e45921640",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "November Sales Analysis",
+      "session_status": "Active",
+      "started_at": "2026-11-14T02:46:58.909Z",
+      "last_activity_at": "2026-11-14T02:47:05.929Z",
+      "ended_at": null,
+      "metadata": {},
+      "created_at": "2026-11-14T02:46:58.909Z",
+      "updated_at": "2026-11-14T03:04:21.329Z"
+    }
+  ]
+}
+-------------------------
+Test using Postman
+PATCH
+http://localhost:5000/api/agent/conversations/4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8/restore
+
+No request body is required.
+
+{
+  "success": true,
+  "message": "Conversation restored successfully",
+  "data": {
+    "id": "4ad2d6ec-b2b7-406f-b08a-82ba356c6ef8",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "New Conversation",
+    "session_status": "Active",
+    "started_at": "2026-11-14T02:56:40.570Z",
+    "last_activity_at": "2026-11-14T03:17:10.293Z",
+    "ended_at": null,
+    "metadata": {},
+    "created_at": "2026-11-14T02:56:40.570Z",
+    "updated_at": "2026-11-14T03:17:10.293Z"
+  }
+}
+-------------------------
+Test using Postman
+GET
+http://localhost:5000/api/agent/conversations/archived
+
+No request body is required.
+
+{
+  "success": true,
+  "count": 0,
+  "data": []
+}
+---------------------------
+
+Archive a test conversation
+Use this existing empty test session:
+
+b9ae3505-6544-4d31-9223-7a3fef7a6098
+
+In Postman:
+
+Method: PATCH
+http://localhost:5000/api/agent/conversations/b9ae3505-6544-4d31-9223-7a3fef7a6098/archive
+
+{
+  "success": true,
+  "message": "Conversation archived successfully",
+  "data": {
+    "id": "b9ae3505-6544-4d31-9223-7a3fef7a6098",
+    "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "session_title": "New Conversation",
+    "session_status": "Archived",
+    "started_at": "2026-11-14T02:57:17.514Z",
+    "last_activity_at": "2026-11-14T02:57:17.514Z",
+    "ended_at": "2026-11-14T03:20:51.032Z",
+    "metadata": {},
+    "created_at": "2026-11-14T02:57:17.514Z",
+    "updated_at": "2026-11-14T03:20:51.032Z"
+  }
+}
+
+-------------------------
+Test using Postman
+GET
+http://localhost:5000/api/agent/conversations/archived
+
+No request body is required.
+
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "id": "b9ae3505-6544-4d31-9223-7a3fef7a6098",
+      "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+      "user_id": "bba6574d-6aec-4165-9211-3894a7afacc4",
+      "session_title": "New Conversation",
+      "session_status": "Archived",
+      "started_at": "2026-11-14T02:57:17.514Z",
+      "last_activity_at": "2026-11-14T02:57:17.514Z",
+      "ended_at": "2026-11-14T03:20:51.032Z",
+      "metadata": {},
+      "created_at": "2026-11-14T02:57:17.514Z",
+      "updated_at": "2026-11-14T03:20:51.032Z"
+    }
+  ]
+}
+-------------------------
+
+Conversation deletion
+One final conversation-management feature is useful: deleting an unwanted conversation.
+
+My recommendation is to implement permanent deletion with ownership validation, deleting its associated messages first and then the session. We should use a database transaction so that partial deletion cannot occur.
+
+We'll also test it using an empty test session, not your November Sales Analysis conversation.
+
+

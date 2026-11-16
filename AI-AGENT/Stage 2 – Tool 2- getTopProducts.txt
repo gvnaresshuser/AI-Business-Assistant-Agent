@@ -1,0 +1,50 @@
+Stage 2 – Tool 2: getTopProducts
+Step 1 – Create the Top Products Tool
+Create this file:
+
+backend/src/agent/tools/top-products.tool.ts
+
+Step 5 – Test Top Selling Products
+If your backend server is running, tsx watch should automatically reload the changes.
+
+Open Postman and send:
+HTTP Request
+POST
+
+http://localhost:5000/api/agent/chat
+
+Body → raw → JSON
+
+{
+  "question": "What are my top five selling products? Show product names, brands, quantities sold and revenue in INR."
+}
+
+{
+  "success": true,
+  "question": "What are my top five selling products? Show product names, brands, quantities sold and revenue in INR.",
+  "answer": "Currently, detailed product-level sales data—such as a breakdown of your top-selling products, their brands, quantities sold, and individual product revenue—is unavailable through the available reporting tools.\n\nI cannot invent business figures or access database records without the appropriate tools enabled. \n\nIf you would like, I can provide your **overall sales summary** (such as total sales revenue, total sales orders, and average order value). Please let me know if you would like to see those high-level figures!"
+}
+
+This is a useful lesson: A function can be implemented correctly and registered in the executor, but if it is missing from the Gemini tool registry, Gemini will never know it exists.
+
+
+POST
+http://localhost:5000/api/agent/chat
+{
+  "question": "What are my top five selling products? Show product names, brands, quantities sold and revenue in INR."
+}
+
+{
+  "success": true,
+  "question": "What are my top five selling products? Show product names, brands, quantities sold and revenue in INR.",
+  "answer": "Here are your top five best-selling products based on sales performance:\n\n1. **Dell XPS 14**\n   - **Brand:** Dell\n   - **Quantity Sold:** 120 units\n   - **Total Revenue:** ₹1,79,99,880\n\n2. **HP Spectre x360**\n   - **Brand:** HP\n   - **Quantity Sold:** 120 units\n   - **Total Revenue:** ₹1,67,99,880\n\n3. **iPhone 17 Pro**\n   - **Brand:** Apple\n   - **Quantity Sold:** 120 units\n   - **Total Revenue:** ₹1,55,99,880\n\n4. **LG 55 inch OLED TV**\n   - **Brand:** LG\n   - **Quantity Sold:** 120 units\n   - **Total Revenue:** ₹1,55,99,880\n\n5. **Apple MacBook Air**\n   - **Brand:** Apple\n   - **Quantity Sold:** 120 units\n   - **Total Revenue:** ₹1,31,99,880\n\n---\n### 💡 **Key Takeaways & Insights:**\n* **Top Revenue Generator:** The **Dell XPS 14** leads overall revenue at **₹1,79,99,880**.\n* **Brand Dominance:** **Apple** has two products in the top five (iPhone 17 Pro and MacBook Air), contributing significantly to overall sales.\n* **Volume Distribution:** All top five products have equal sales volume (120 units each), indicating strong demand across high-end laptops, smartphones, and premium displays."
+}
+
+Verification of results
+The agent returned five products, each with 120 units sold.
+Product	Brand	Quantity
+Dell XPS 14	Dell	120
+HP Spectre x360	HP	120
+iPhone 17 Pro	Apple	120
+LG 55 inch OLED TV	LG	120
+Apple MacBook Air	Apple	120

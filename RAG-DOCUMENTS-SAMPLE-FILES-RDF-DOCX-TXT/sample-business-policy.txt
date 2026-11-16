@@ -1,0 +1,33 @@
+AI Business Assistant – Sample Knowledge Documents
+Fictional sample content for testing TXT text extraction and RAG ingestion.
+
+Company Profile
+---------------
+GV Retail Solutions is a fictional business that sells consumer electronics and office equipment to individual and business customers.
+The company operates an online store and a small network of regional service partners. Its customer support team handles product enquiries, orders, returns and warranty questions.
+
+Product Warranty Policy
+-----------------------
+New laptops and desktop computers carry a limited manufacturer warranty of one year from the date of purchase, unless the product listing states a different period.
+Accessories such as keyboards, mice and cables carry a six-month replacement warranty when a manufacturing defect is confirmed.
+Warranty claims require the original invoice or a valid order number. Physical damage, liquid damage and unauthorised repairs are not covered by the standard warranty.
+Customers should contact support@gvretailsolutions.example with their order number, product model and a short description of the issue.
+
+Returns and Refunds
+-------------------
+Customers may request a return within seven calendar days of delivery for products that are eligible for return.
+Products must be returned with their original packaging, accessories and invoice. Software licences, opened consumables and products damaged by misuse are not eligible for return.
+After the returned product passes inspection, an approved refund is normally initiated within five to seven business days. The time taken for the amount to appear depends on the payment provider.
+
+Customer Support Hours
+----------------------
+Customer support is available Monday to Saturday, from 9:30 AM to 6:00 PM Indian Standard Time.
+Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next working period.
+
+Sample RAG Questions
+--------------------
+How long is the warranty for a laptop?
+What is the warranty period for a keyboard?
+What documents are needed to make a warranty claim?
+How many days does a customer have to request a return?
+When is customer support available?

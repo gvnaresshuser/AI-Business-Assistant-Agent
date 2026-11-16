@@ -1,0 +1,87 @@
+ <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
+            <RefreshCw size={18} className="animate-spin" />
+            Loading customers...
+          </div> 
+		  
+		  
+		  <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <div className="relative">
+          <div className="h-14 w-14 rounded-full border-[5px] border-indigo-100" />
+          <div className="absolute inset-0 h-14 w-14 animate-spin rounded-full border-[5px] border-transparent border-t-blue-600 border-r-violet-600" />
+          <div className="absolute inset-2 rounded-full bg-gradient-to-br from-blue-500/10 to-violet-500/10" />
+        </div>
+
+        <div className="text-center space-y-1.5">
+          <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+            Loading Customers...
+          </p>
+          <p className="text-sm text-slate-500">
+            Fetching customer details for you
+          </p>
+        </div>
+      </div>
+	  
+	  
+	  <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
+            <RefreshCw size={18} className="animate-spin" />
+            Loading sales transactions...
+          </div>
+		  
+		  
+		  
+<div className="flex flex-col items-center justify-center gap-4 py-16">
+  <div className="relative">
+    <div className="h-14 w-14 rounded-full border-[5px] border-indigo-100" />
+    <div className="absolute inset-0 h-14 w-14 animate-spin rounded-full border-[5px] border-transparent border-t-blue-600 border-r-violet-600" />
+    <div className="absolute inset-2 rounded-full bg-gradient-to-br from-blue-500/10 to-violet-500/10" />
+  </div>
+
+  <div className="text-center space-y-1.5">
+    <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+      Loading Sales Transactions...
+    </p>
+    <p className="text-sm text-slate-500">
+      Fetching the latest sales transaction records
+    </p>
+  </div>
+</div>
+
+
+
+
+  <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <RefreshCw className="mb-4 animate-spin text-blue-600" size={36} />
+
+        <p className="font-medium text-slate-700">
+          Loading business analytics...
+        </p>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Fetching your latest business reports
+        </p>
+      </div>
+	  
+	  
+	  
+<div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+  <div className="relative">
+    <div className="h-16 w-16 rounded-full border-[5px] border-indigo-100" />
+
+    <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-[5px] border-transparent border-t-blue-600 border-r-violet-600" />
+
+    <div className="absolute inset-2 rounded-full bg-gradient-to-br from-blue-500/10 to-violet-500/10" />
+  </div>
+
+  <div className="text-center space-y-1.5">
+    <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+      Loading Business Analytics...
+    </p>
+
+    <p className="text-sm text-slate-500">
+      Fetching your latest business reports
+    </p>
+  </div>
+</div>
+
+
+

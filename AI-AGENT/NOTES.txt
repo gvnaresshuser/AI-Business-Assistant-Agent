@@ -1,0 +1,24 @@
+Business and productivity agents
+
+1. AI Business Assistant Agent Highly recommended
+
+- Understand business questions.
+- Analyse sales and expenses.
+- Generate business reports.
+- Suggest ways to improve performance.
+Example: "Why did our sales decrease this month?"
+
+
+AI Business Assistant – Database Design
+Database naming convention approved
+Database: ai_business_assistant
+
+Table suffix: _biz_agent
+
+Database: PostgreSQL / NeonDB
+
+Primary key: UUID
+
+Relationships: Foreign keys
+
+Financial fields: NUMERIC(12,2)

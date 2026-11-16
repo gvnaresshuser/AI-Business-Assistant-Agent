@@ -1,0 +1,98 @@
+11111111111 - Part 1 – Introduction
+Welcome to the demonstration of our AI Business Assistant Agent.
+
+This is a full-stack, AI-powered business management application designed to help businesses manage their daily operations more efficiently.
+
+It combines modern web technologies with Generative AI to provide intelligent assistance, business insights, and knowledge-based answers.
+
+Let's explore the technologies, architecture, and key features of this application.
+
+-----------
+222222222222222 - Part 2 – Frontend Technologies
+
+Let's begin with the frontend.
+
+The user interface is developed using React J S and TypeScript, with Vite providing a fast development and build environment.
+
+Tailwind C S S is used for modern and responsive styling.
+
+React Router handles application navigation, while Axios is used for communication with backend R E S T A P I s.
+
+Together, these technologies provide a clean, responsive, and user-friendly interface.
+-----------
+33333333333333 - Part 3 – Backend Technologies
+
+Moving to the backend, the application is developed using Node J S, Express J S, and TypeScript.
+
+The backend follows a structured architecture with separate routes, controllers, services, and database operations.
+
+R E S T A P I s handle communication between the frontend and backend.
+
+This architecture makes the application easier to maintain, extend, and scale as business requirements grow.
+-----------
+44444444444444444 - Part 4 – Database and Business Modules
+
+Postgre S Q L is used as the primary database to store and manage business information.
+
+The application includes several important modules.
+
+The Dashboard provides an overview of business activities.
+
+The Products module manages product information.
+
+The Customers module maintains customer records.
+
+The Sales module manages sales transactions.
+
+The Analytics module provides useful business insights and performance information.
+
+All these modules work together to provide a centralized business management platform.
+-----------
+5555555555555 - Part 5 – AI Integration
+
+Now let's explore the most interesting part: Artificial Intelligence integration.
+
+The application uses Google's Gemini A P I as its Generative AI provider.
+
+The AI Assistant can understand user questions and generate natural language responses.
+
+Instead of simply displaying predefined information, it uses the power of a Large Language Model to understand questions and generate relevant answers.
+
+This makes the application more interactive and intelligent.
+-----------
+66666666666666666 - Part 6 – RAG Technology
+
+One of the most powerful features is Retrieval-Augmented Generation, commonly known as R A G.
+
+R A G allows the AI Assistant to answer questions using business-specific documents.
+
+Users can upload documents in P D F, D O C X, and T X T formats.
+
+The application extracts the text, divides it into smaller sections called chunks, and generates numerical representations known as embeddings.
+
+These embeddings are stored in Postgre S Q L using the P G Vector extension.
+-----------
+777777777777777 - Part 7 – How RAG Works
+
+When a user asks a question, the system generates an embedding for that question.
+
+It then performs a semantic similarity search to identify the most relevant information from the uploaded documents.
+
+The retrieved information is passed to Gemini as context.
+
+Gemini uses this business-specific information to generate a relevant answer.
+
+The system can also display the source document names and similarity scores, helping users understand where the information came from.
+-----------
+888888888888 - Part 8 – Conclusion
+
+To conclude, this project brings together React J S, TypeScript, Node J S, Express J S, Postgre S Q L, Gemini A P I, embeddings, vector search, and R A G technology.
+
+It is not just a business management application or a simple chatbot.
+
+It is an intelligent business platform that combines full-stack development with Generative AI to make business information more accessible and useful.
+
+Thank you for watching this demonstration.
+-----------
+-----------
+-----------

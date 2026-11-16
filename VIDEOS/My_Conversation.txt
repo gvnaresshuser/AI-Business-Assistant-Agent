@@ -1,0 +1,18 @@
+My Conversation
+===============
+
+[02:51 pm] You:
+What are our total sales this month?
+
+[02:51 pm] AI Assistant:
+Here is the sales performance summary for the most recent month recorded (**October 2026**):
+
+* **Total Sales Revenue:** ₹2,48,74,340.68
+* **Total Sales Orders:** 124 orders
+* **Average Order Value (AOV):** ₹2,00,599.52
+
+---
+
+### Key Takeaways:
+* **Consistent Order Volume:** Sales order volume remained steady at **124 orders**, generating over **₹2.48 Crore** in total revenue.
+* **Strong Basket Size:** The average value per order stayed strong at **₹2,00,599.52**, reflecting consistent high-value customer purchases.

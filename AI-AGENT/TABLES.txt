@@ -1,0 +1,527 @@
+AI Business Assistant – Database Design
+Database naming convention approved
+Database: ai_business_assistant
+
+Table suffix: _biz_agent
+
+Database: PostgreSQL / NeonDB
+
+Primary key: UUID
+
+Relationships: Foreign keys
+
+Financial fields: NUMERIC(12,2)
+1. Our table naming convention
+I recommend using functional prefixes in addition to the common suffix.
+
+For example:
+- biz_ – Business management
+- auth_ – Authentication and users
+- cat_ – Product categories
+- prod_ – Products
+- cust_ – Customers
+- sales_ – Sales and orders
+- vend_ – Vendors
+- purch_ – Purchases
+- inv_ – Inventory
+- fin_ – Finance and expenses
+- agent_ – AI agent
+- audit_ – Audit and activity logs
+This makes related tables immediately identifiable.
+2. Complete table inventory
+I recommend 19 core tables for our initial design.
+A. Business and authentication
+3 tables
+Table name	Purpose
+biz_businesses_biz_agent	Business details
+auth_users_biz_agent	Application users
+auth_roles_biz_agent	User roles and permissions
+
+
+B. Product and customer management
+3 tables
+Table name	Purpose
+cat_categories_biz_agent	Product categories
+prod_products_biz_agent	Product catalogue
+cust_customers_biz_agent	Customer information
+
+
+C. Sales management
+2 tables
+Table name	Purpose
+sales_orders_biz_agent	Customer orders
+sales_order_items_biz_agent	Individual products in orders
+
+
+D. Vendor and purchasing
+3 tables
+Table name	Purpose
+vend_vendors_biz_agent	Supplier details
+purch_purchase_orders_biz_agent	Purchase orders
+purch_purchase_items_biz_agent	Purchased products
+
+
+E. Inventory management
+2 tables
+Table name	Purpose
+inv_inventory_biz_agent	Current product stock
+inv_stock_movements_biz_agent	Stock movement history
+
+
+F. Financial management
+1 table
+Table name	Purpose
+fin_expenses_biz_agent	Business expenses
+
+
+G. AI agent management
+4 tables
+Table name	Purpose
+agent_sessions_biz_agent	Chat sessions
+agent_messages_biz_agent	User and AI messages
+agent_tool_logs_biz_agent	Tool execution history
+agent_reports_biz_agent	Generated reports
+
+
+H. Audit management
+1 table
+Table name	Purpose
+audit_logs_biz_agent	Application activity history
+
+Important relationships explained
+Let's understand these relationships using simple examples.
+Relationship	Type	Explanation
+Business → Users	One-to-many	One business can have multiple users
+Category → Products	One-to-many	One category can contain many products
+Customer → Orders	One-to-many	One customer can place multiple orders
+Order → Order Items	One-to-many	One order can contain multiple products
+Product → Order Items	One-to-many	One product can appear in multiple orders
+Vendor → Purchase Orders	One-to-many	One vendor can supply multiple purchases
+Product → Inventory	One-to-one	One current inventory record per product
+Product → Stock Movements	One-to-many	One product can have many stock transactions
+Chat Session → Messages	One-to-many	One conversation contains multiple messages
+
+
+Detailed database table design
+Here is the recommended logical structure for each table.
+
+Notation: PK = Primary Key, FK = Foreign Key, UQ = Unique, NN = Not Null.
+A. Business and authentication tables
+1. biz_businesses_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_name	VARCHAR(150)	NN
+business_code	VARCHAR(30)	UQ
+email	VARCHAR(150)	
+phone	VARCHAR(20)	
+address	TEXT	
+currency_code	VARCHAR(3)	Default INR
+is_active	BOOLEAN	Default TRUE
+created_at	TIMESTAMPTZ	Default NOW()
+updated_at	TIMESTAMPTZ	Default NOW()
+
+2. auth_roles_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+role_name	VARCHAR(50)	NN
+description	TEXT	
+created_at	TIMESTAMPTZ	Default NOW()
+
+3. auth_users_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+role_id	UUID	FK
+full_name	VARCHAR(150)	NN
+email	VARCHAR(150)	NN
+password_hash	TEXT	NN
+is_active	BOOLEAN	Default TRUE
+created_at	TIMESTAMPTZ	Default NOW()
+updated_at	TIMESTAMPTZ	Default NOW()
+
+B. Product and customer tables
+4. cat_categories_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+category_name	VARCHAR(100)	NN
+description	TEXT	
+is_active	BOOLEAN	Default TRUE
+
+5. prod_products_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+category_id	UUID	FK
+product_name	VARCHAR(150)	NN
+sku	VARCHAR(50)	NN
+brand	VARCHAR(100)	
+color	VARCHAR(50)	
+cost_price	NUMERIC(12,2)	NN
+selling_price	NUMERIC(12,2)	NN
+reorder_level	INTEGER	Default 5
+is_active	BOOLEAN	Default TRUE
+created_at	TIMESTAMPTZ	Default NOW()
+
+6. cust_customers_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+customer_name	VARCHAR(150)	NN
+email	VARCHAR(150)	
+phone	VARCHAR(20)	
+city	VARCHAR(100)	
+customer_type	VARCHAR(30)	
+created_at	TIMESTAMPTZ	Default NOW()
+
+C. Sales tables
+7. sales_orders_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+customer_id	UUID	FK
+order_number	VARCHAR(50)	UQ per business
+order_date	TIMESTAMPTZ	NN
+subtotal	NUMERIC(12,2)	NN
+discount_amount	NUMERIC(12,2)	Default 0
+tax_amount	NUMERIC(12,2)	Default 0
+shipping_amount	NUMERIC(12,2)	Default 0
+total_amount	NUMERIC(12,2)	NN
+order_status	VARCHAR(30)	NN
+payment_status	VARCHAR(30)	NN
+created_at	TIMESTAMPTZ	Default NOW()
+
+8. sales_order_items_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+order_id	UUID	FK
+product_id	UUID	FK
+quantity	INTEGER	NN
+unit_price	NUMERIC(12,2)	NN
+unit_cost_snapshot	NUMERIC(12,2)	NN
+discount_amount	NUMERIC(12,2)	Default 0
+line_total	NUMERIC(12,2)	NN
+
+D. Vendor and purchase tables
+9. vend_vendors_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+vendor_name	VARCHAR(150)	NN
+email	VARCHAR(150)	
+phone	VARCHAR(20)	
+address	TEXT	
+is_active	BOOLEAN	Default TRUE
+
+10. purch_purchase_orders_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+vendor_id	UUID	FK
+purchase_number	VARCHAR(50)	NN
+purchase_date	DATE	NN
+total_amount	NUMERIC(12,2)	NN
+purchase_status	VARCHAR(30)	NN
+created_at	TIMESTAMPTZ	Default NOW()
+
+11. purch_purchase_items_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+purchase_order_id	UUID	FK
+product_id	UUID	FK
+quantity	INTEGER	NN
+unit_cost	NUMERIC(12,2)	NN
+
+E. Inventory tables
+12. inv_inventory_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+product_id	UUID	FK, UQ per business
+stock_quantity	INTEGER	Default 0
+updated_at	TIMESTAMPTZ	Default NOW()
+
+13. inv_stock_movements_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+product_id	UUID	FK
+movement_type	VARCHAR(30)	NN
+quantity	INTEGER	NN
+reference_type	VARCHAR(30)	
+reference_id	UUID	
+movement_date	TIMESTAMPTZ	NN
+notes	TEXT	
+
+F. Financial table
+14. fin_expenses_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+expense_category	VARCHAR(100)	NN
+description	TEXT	
+amount	NUMERIC(12,2)	NN
+expense_date	DATE	NN
+payment_status	VARCHAR(30)	NN
+created_at	TIMESTAMPTZ	Default NOW()
+
+G. AI agent tables
+15. agent_sessions_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+user_id	UUID	FK
+title	VARCHAR(200)	
+created_at	TIMESTAMPTZ	Default NOW()
+
+16. agent_messages_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+session_id	UUID	FK
+role	VARCHAR(30)	NN
+message_content	TEXT	NN
+tool_metadata	JSONB	
+created_at	TIMESTAMPTZ	Default NOW()
+
+17. agent_tool_logs_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+user_id	UUID	FK
+session_id	UUID	FK
+tool_name	VARCHAR(100)	NN
+input_parameters	JSONB	
+execution_status	VARCHAR(30)	NN
+execution_time_ms	INTEGER	
+error_message	TEXT	
+created_at	TIMESTAMPTZ	Default NOW()
+
+18. agent_reports_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+user_id	UUID	FK
+report_type	VARCHAR(100)	NN
+report_parameters	JSONB	
+file_path	TEXT	
+status	VARCHAR(30)	NN
+created_at	TIMESTAMPTZ	Default NOW()
+
+H. Audit table
+19. audit_logs_biz_agent
+Column	Type	Constraint
+id	UUID	PK
+business_id	UUID	FK
+user_id	UUID	FK
+action	VARCHAR(100)	NN
+entity_type	VARCHAR(100)	
+entity_id	UUID	
+details	JSONB	
+created_at	TIMESTAMPTZ	Default NOW()
+
+6. Important database constraints and indexing
+We should not just create tables. We must also ensure the relationships remain consistent.
+
+These are the constraints I recommend.
+Table	Important constraints
+Businesses	Unique business code
+Users	Unique email within a business
+Roles	Unique role name within a business
+Categories	Unique category name within a business
+Products	Unique SKU within a business
+Customers	Unique customer email where supplied
+Orders	Unique order number within a business
+Inventory	One inventory record per product per business
+Purchase Orders	Unique purchase number within a business
+Order Items	Quantity greater than zero
+Expenses	Amount greater than zero
+
+We will use:
+- ON DELETE RESTRICT for important business records.
+- ON DELETE CASCADE for dependent chat messages when a chat session is intentionally deleted, subject to our retention policy.
+- ON DELETE SET NULL only for optional relationships where preserving history makes sense.
+
+Suggested sample data:
+Entity	Sample quantity
+Businesses	1
+Users	4
+Roles	3
+Categories	8
+Products	50
+Customers	200
+Vendors	15
+Sales orders	1,500
+Sales order items	3,000
+Purchase orders	100
+Purchase items	250
+Inventory records	50
+Stock movements	1,500
+Expenses	300
+
+Historical period: January–December 2026.
+
+We should also include:
+- Products with high sales.
+- Products with low sales.
+- Products with zero sales.
+- Customers with repeat purchases.
+- Customers who have stopped purchasing.
+- Months with increased expenses.
+- Products with low inventory.
+- Cancelled orders.
+- Refunded orders.
+- Different payment statuses.
+This variety will help us test the AI agent properly.
+8. Example business analytical SQL queries
+Before connecting Gemini, we should verify that our backend can answer business questions using SQL.
+
+Example 1 – Total monthly revenue
+
+
+SELECT
+    DATE_TRUNC('month', order_date) AS month,
+    SUM(total_amount) AS revenue
+FROM sales_orders_biz_agent
+WHERE business_id = $1
+  AND order_status = 'COMPLETED'
+GROUP BY DATE_TRUNC('month', order_date)
+ORDER BY month;
+
+This is a starting query. Our final revenue service will also apply the agreed refund, discount and tax rules.
+
+Example 2 – Top five products
+
+SELECT
+    p.product_name,
+    SUM(oi.quantity) AS units_sold,
+    SUM(oi.line_total) AS total_revenue
+FROM sales_order_items_biz_agent oi
+JOIN sales_orders_biz_agent o
+    ON o.id = oi.order_id
+JOIN prod_products_biz_agent p
+    ON p.id = oi.product_id
+WHERE o.business_id = $1
+  AND o.order_status = 'COMPLETED'
+GROUP BY p.id, p.product_name
+ORDER BY total_revenue DESC
+LIMIT 5;
+
+Example 3 – Products below reorder level
+SELECT
+    p.product_name,
+    i.stock_quantity,
+    p.reorder_level
+FROM inv_inventory_biz_agent i
+JOIN prod_products_biz_agent p
+    ON p.id = i.product_id
+WHERE i.business_id = $1
+  AND i.stock_quantity <= p.reorder_level
+ORDER BY i.stock_quantity;
+
+
+Example 4 – Monthly expense summary
+SELECT
+    DATE_TRUNC('month', expense_date) AS month,
+    expense_category,
+    SUM(amount) AS total_expense
+FROM fin_expenses_biz_agent
+WHERE business_id = $1
+GROUP BY
+    DATE_TRUNC('month', expense_date),
+    expense_category
+ORDER BY month, total_expense DESC;
+
+
+Notice that all these queries use a parameter for business_id. This will be supplied by our authenticated backend context, not by the AI model.
+9. How our database will support the AI agent
+This is how we connect the table groups to the agent tools.
+Business requirement	Tables used	AI tool
+Total revenue	Orders, order items	getMonthlySales
+Top-selling products	Products, orders, order items	getTopSellingProducts
+Profit analysis	Orders, order items, expenses	getProfitAnalysis
+Customer performance	Customers, orders	getTopCustomers
+Inventory analysis	Products, inventory, stock movements	getInventorySummary
+Vendor purchases	Vendors, purchase orders, purchase items	getPurchaseAnalysis
+Expense comparison	Expenses	compareExpenses
+Conversation history	Sessions, messages	getConversationHistory
+
+This mapping is important because we can identify exactly which tables each AI tool needs.
+10. Final table identification reference
+This is the reference we should maintain throughout development.
+Prefix	Business area	Tables
+biz_	Business	1
+auth_	Authentication	2
+cat_	Categories	1
+prod_	Products	1
+cust_	Customers	1
+sales_	Sales	2
+vend_	Vendors	1
+purch_	Purchasing	2
+inv_	Inventory	2
+fin_	Finance	1
+agent_	AI agent	4
+audit_	Audit	1
+Total		19
+
+Database design decisions
+
+- 19 clearly named business tables.
+- Common _biz_agent suffix.
+- Consistent UUID primary keys.
+- Clearly defined relationships.
+- Multi-business support.
+- Historical transaction records.
+- AI conversation and tool tracking.
+- Financial analytics support.
+
+11. Our next development milestone
+I suggest we proceed in this exact order:
+1. Prepare complete PostgreSQL CREATE TABLE scripts for all 19 tables.
+2. Define foreign keys, unique constraints, check constraints and indexes.
+3. Prepare the initial seed data scripts.
+4. Insert sample data covering November 2025 – October 2026.
+5. Run SQL queries to verify sales, expenses, profit and inventory calculations.
+6. Freeze the database structure before backend development.
+One important instruction for our project: We should not rename or restructure working tables unnecessarily once we begin implementing the backend repositories and AI tools.
+
+This naming convention will make it much easier to teach, maintain, debug and extend the project.
+
+Our database foundation is now clearly planned. Next, we can prepare the complete executable SQL migration for all 19 tables, in dependency order, with sample data scripts. 🚀
+
+Deliverables
+We will prepare separate SQL scripts:
+database/
+│
+├── 01_create_tables.sql
+├── 02_create_indexes.sql
+├── 03_insert_master_data.sql
+├── 04_insert_transactional_data.sql
+├── 05_insert_sample_expenses.sql
+├── 06_analytical_queries.sql
+└── 07_database_validation.sql
+
+
+postgresql://neondb_owner:npg_gcz9hSD8bGuX@ep-frosty-morning-bdo0dhhg-pooler.c-8.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+
+NeonDB project
+Created
+
+- Project: AI Business Assistant Agent
+- Branch: production
+- Database: neondb
+- PostgreSQL: Connected and provisioned
+- Plan: Free
+- Region: AWS US East 2 (Ohio)
+
+Let's complete the database in this order
+1. 01_create_tables.sql – Create all 21 tables.
+2. 02_create_indexes.sql – Add primary, foreign-key and performance indexes.
+3. 03_insert_master_data.sql – Insert business, users, roles, categories, products and vendors.
+4. 04_insert_transactional_data.sql – Insert customers, orders, payments, refunds and purchases.
+5. 05_insert_sample_expenses.sql – Insert monthly business expenses.
+6. 06_analytical_queries.sql – Prepare business analytics queries.
+7. 07_database_validation.sql – Validate tables, relationships and sample records.

@@ -1,0 +1,77 @@
+Create a conversation memory test
+Create this temporary file:
+
+backend/src/agent/tools/conversation-memory-test.ts
+
+npx tsx src/agent/tools/conversation-memory-test.ts
+
+
+E:\AI-Business-Assistant-Agent\backend>npx tsx src/agent/tools/conversation-memory-test.ts
+◇ injected env (6) from .env
+(node:16984) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PostgreSQL client connected
+PASS: Conversation session created
+PASS: User message saved
+PASS: Assistant message saved
+PASS: Conversation history retrieved in order
+PASS: Another user cannot access this session
+
+All conversation memory tests passed!
+Temporary test data cleaned up
+
+E:\AI-Business-Assistant-Agent\backend>
+
+
+Test the complete conversation flow
+
+Test the AI conversation
+We'll use Postman and the same session for two questions.
+
+First request – New conversation
+
+POST http://localhost:5000/api/agent/chat
+
+Body → raw → JSON:
+{
+  "question": "What are our total sales?"
+}
+{
+  "success": true,
+  "sessionId": "71fc52be-5088-4c29-89aa-b60e45921640",
+  "question": "What are our total sales?",
+  "answer": "Here is the overall summary of your sales performance:\n\n* **Total Sales Revenue:** ₹30,23,24,537.20\n* **Total Sales Orders:** 1,500 orders\n* **Average Order Value (AOV):** ₹2,01,549.69\n\nIf you would like a detailed breakdown by monthly trends, product categories, or top-selling products, let me know!"
+}
+
+
+
+
+E:\AI-Business-Assistant-Agent\backend>npx tsx src/agent/tools/conversation-memory-test.ts
+◇ injected env (6) from .env
+(node:872) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PostgreSQL client connected
+PASS: Conversation created
+PASS: Two conversation turns saved
+PASS: Four messages retrieved in correct order
+PASS: Previous assistant response is available
+PASS: Session ownership validation
+
+All multi-turn conversation tests passed!
+Temporary test data cleaned up
+
+E:\AI-Business-Assistant-Agent\backend>

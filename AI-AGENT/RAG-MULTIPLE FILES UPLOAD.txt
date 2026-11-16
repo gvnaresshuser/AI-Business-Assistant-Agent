@@ -1,0 +1,630 @@
+RAG-MULTIPLE FILES UPLOAD
+
+Upload Files
+Drag and drop files here
+
+Or browse and select one or multiple files
+PDF · DOCX · DOC · TXT
+
+Selected files will be processed individually and added to your knowledge base.
+Multiple files supported
+
+
+Supported functionality
+Feature	Behaviour
+Manual document entry	Retained
+Single file upload	Supported
+Multiple file selection	Supported
+PDF	Text extraction
+DOCX / DOC	Document text extraction
+TXT	Direct text extraction
+Document name	Use filename for uploaded documents
+RAG processing	Chunking, embeddings and PostgreSQL storage
+
+We should also ensure each uploaded file becomes an individual knowledge document, so your existing document listing, deletion, semantic search and RAG functionality continue working.
+
+
+npm list multer pdf-parse mammoth word-extractor
+
+E:\AI-Business-Assistant-Agent\backend>npm list multer pdf-parse mammoth word-extractor
+backend@1.0.0 E:\AI-Business-Assistant-Agent\backend
+`-- (empty)
+
+
+E:\AI-Business-Assistant-Agent\backend>
+
+
+npm install multer pdf-parse mammoth word-extractor
+
+npm list multer pdf-parse mammoth word-extractor
+
+
+E:\AI-Business-Assistant-Agent\backend>npm list multer pdf-parse mammoth word-extractor
+backend@1.0.0 E:\AI-Business-Assistant-Agent\backend
++-- mammoth@1.13.0
++-- multer@2.5.0
++-- pdf-parse@2.4.5
+`-- word-extractor@1.0.4
+
+
+E:\AI-Business-Assistant-Agent\backend>
+
+
+Create document extraction service
+Create a new file:
+
+backend/src/services/document-extraction.service.ts
+
+E:\AI-Business-Assistant-Agent\backend>node -e "const p=require('pdf-parse'); console.log(Object.keys(p))"
+[
+  'AbortException',
+  'FormatError',
+  'InvalidPDFException',
+  'Line',
+  'LineDirection',
+  'LineStore',
+  'PDFParse',
+  'PasswordException',
+  'Point',
+  'Rectangle',
+  'ResponseException',
+  'Shape',
+  'Table',
+  'UnknownErrorException',
+  'VerbosityLevel',
+  'getException'
+]
+
+E:\AI-Business-Assistant-Agent\backend>
+Create this new file:
+
+backend/src/types/word-extractor.d.ts
+
+Create this new file:
+
+backend/src/middleware/knowledge-upload.middleware.ts
+
+ npm install -D @types/multer
+ npm list @types/multer
+ 
+verify the complete PDF/DOCX/TXT → text extraction → Gemini embeddings → PostgreSQL RAG pipeline. 
+
+sample-business-policy.pdf
+PDF
+
+sample-business-policy.docx
+Word
+
+sample-business-policy.txt
+Document
+
+Upload all three together
+1. Download the three files.
+2. Open your RAG Knowledge page.
+3. Click Click to select documents.
+4. Select all three files together.
+5. Click Upload 3 File(s).
+
+Test these RAG questions afterwards
+Question	Expected information
+How long is the warranty for a laptop?	One year
+What is the warranty period for a keyboard?	Six months
+How many days are allowed for returns?	Seven calendar days
+How long does a refund take?	Five to seven business days
+What are customer support hours?	Monday–Saturday, 9:30 AM–6 PM
+
+Important: These are fictional sample policies, created specifically to test your PDF, DOCX and TXT extraction and RAG search functionality.
+
+
+sample-business-policy.pdf
+PDF
+
+sample-business-policy.docx
+Word
+
+sample-business-policy.txt
+Document
+
+---------------
+Step 1 – Check existing knowledge documents
+Run this SQL query:
+SELECT
+    business_id,
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+GROUP BY
+    business_id,
+    document_name
+ORDER BY
+    document_name;
+	
+	[{
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Electronics Store Warranty Policy",
+  "total_chunks": 1
+}, {
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Product Warranty Policy",
+  "total_chunks": 1
+}, {
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Test Policy",
+  "total_chunks": 1
+}]
+
+-----------------
+This shows:
+- Existing document names.
+- Number of chunks per document.
+- Business associated with each document.
+Step 2 – Check total database records
+SELECT
+    COUNT(*) AS total_knowledge_chunks,
+    COUNT(DISTINCT document_name) AS total_documents
+FROM agent_knowledge_chunks_biz_agent;
+
+
+[{
+  "total_knowledge_chunks": 3,
+  "total_documents": 3
+}]
+
+-----------------
+Step 3 – Inspect the existing records
+SELECT
+    business_id,
+    document_name,
+    chunk_index,
+    LEFT(chunk_content, 300) AS content_preview,
+    metadata
+FROM agent_knowledge_chunks_biz_agent
+ORDER BY document_name, chunk_index
+LIMIT 20;
+
+[{
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "content_preview": "ELECTRONICS STORE WARRANTY POLICY 1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase. 2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase. 3. Dell laptops carry a manufacturer warranty of 1 year. The warranty co",
+  "metadata": "{\"source\": \"Electronics Store Warranty Policy\"}"
+}, {
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "content_preview": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-year manufacturer warranty. 3. Logitech accessories come with a 1-year warranty. 4. Warranty covers manufacturing defects and hardware failures. 5. Phys",
+  "metadata": "{\"source\": \"Product Warranty Policy\"}"
+}, {
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "content_preview": "AI Business Assistant Admin Business Account RAG Knowledge Base Upload business documents and build your AI knowledge base. Upload Knowledge Document Add business information to your knowledge base.",
+  "metadata": "{\"source\": \"Test Policy\"}"
+}]
+
+-----------------
+
+This lets us inspect the actual text stored in the RAG knowledge table.
+Step 4 – Check embedding availability
+SELECT
+    COUNT(*) AS total_chunks,
+    COUNT(embedding) AS chunks_with_embeddings,
+    COUNT(*) - COUNT(embedding) AS missing_embeddings
+FROM agent_knowledge_chunks_biz_agent;
+
+
+[{
+  "total_chunks": 3,
+  "chunks_with_embeddings": 3,
+  "missing_embeddings": 0
+}]
+
+-----------------
+
+This verifies whether embeddings are present.
+
+
+
+Our testing plan
+1. Before upload
+   
+   Record existing document names and total chunks.
+2. Upload three sample files
+   
+   PDF, DOCX and TXT through your React application.
+3. After upload
+   
+   Run the same SQL queries and compare the results.
+4. Verify RAG
+   
+   Ask questions and verify that answers and sources come from the newly uploaded documents.
+Please execute Steps 1 and 2 first and share the SQL results. We'll examine your existing database before uploading anything.
+
+=====================================
+Before uploading – inspect existing content
+
+Your earlier query showed only the first 300 characters. Let's inspect the complete existing content.
+------------------------------------------
+
+Run:
+
+SELECT
+    document_name,
+    chunk_index,
+    chunk_content,
+    LENGTH(chunk_content) AS content_length,
+    metadata
+FROM agent_knowledge_chunks_biz_agent
+ORDER BY document_name, chunk_index;
+
+[{
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "chunk_content": "ELECTRONICS STORE WARRANTY POLICY 1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase. 2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase. 3. Dell laptops carry a manufacturer warranty of 1 year. The warranty covers manufacturing defects but does not cover accidental physical damage or liquid damage. 4. Customers must provide the original purchase invoice when requesting warranty service. 5. Warranty claims must be submitted through an authorised service centre. 6. Accessories such as cables, chargers and headphones carry a 6-month manufacturer warranty.",
+  "content_length": 649,
+  "metadata": "{\"source\": \"Electronics Store Warranty Policy\"}"
+}, {
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "chunk_content": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-year manufacturer warranty. 3. Logitech accessories come with a 1-year warranty. 4. Warranty covers manufacturing defects and hardware failures. 5. Physical damage, water damage, and accidental damage are not covered under warranty. 6. Customers must provide the original purchase invoice to claim warranty. 7. Warranty claims can be initiated by contacting the customer support team. 8. Replacement or repair is subject to manufacturer warranty terms and conditions.",
+  "content_length": 615,
+  "metadata": "{\"source\": \"Product Warranty Policy\"}"
+}, {
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "chunk_content": "AI Business Assistant Admin Business Account RAG Knowledge Base Upload business documents and build your AI knowledge base. Upload Knowledge Document Add business information to your knowledge base.",
+  "content_length": 198,
+  "metadata": "{\"source\": \"Test Policy\"}"
+}]
+
+
+This gives us the complete stored text for all three existing documents.
+------------------------------------------
+3. After uploading – verify the new content
+
+Run:
+
+SELECT
+    document_name,
+    chunk_index,
+    chunk_content,
+    LENGTH(chunk_content) AS content_length,
+    embedding IS NOT NULL AS has_embedding
+FROM agent_knowledge_chunks_biz_agent
+WHERE document_name IN (
+    'sample-business-policy.pdf',
+    'sample-business-policy.docx',
+    'sample-business-policy.txt'
+)
+ORDER BY document_name, chunk_index;
+
+[{
+  "document_name": "sample-business-policy.docx",
+  "chunk_index": 0,
+  "chunk_content": "AI Business Assistant – Sample Knowledge Documents Fictional sample content for testing DOCX text extraction and RAG ingestion. Company Profile GV Retail Solutions is a fictional business that sells consumer electronics and office equipment to individual and business customers. The company operates an online store and a small network of regional service partners. Its customer support team handles product enquiries, orders, returns and warranty questions. Product Warranty Policy New laptops and desktop computers carry a limited manufacturer warranty of one year from the date of purchase, unless the product listing states a different period. Accessories such as keyboards, mice and cables carry a six-month replacement warranty when a manufacturing defect is confirmed. Warranty claims require the original invoice or a valid order number. Physical damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should contact support@gvretailsolutions.examp",
+  "content_length": 1000,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.docx",
+  "chunk_index": 1,
+  "chunk_content": "ical damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should contact support@gvretailsolutions.example with their order number, product model and a short description of the issue. Returns and Refunds Customers may request a return within seven calendar days of delivery for products that are eligible for return. Products must be returned with their original packaging, accessories and invoice. Software licences, opened consumables and products damaged by misuse are not eligible for return. After the returned product passes inspection, an approved refund is normally initiated within five to seven business days. The time taken for the amount to appear depends on the payment provider. Customer Support Hours Customer support is available Monday to Saturday, from 9:30 AM to 6:00 PM Indian Standard Time. Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next wor",
+  "content_length": 1000,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.docx",
+  "chunk_index": 2,
+  "chunk_content": "d Time. Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next working period. Sample RAG Questions How long is the warranty for a laptop? What is the warranty period for a keyboard? What documents are needed to make a warranty claim? How many days does a customer have to request a return? When is customer support available?",
+  "content_length": 410,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.pdf",
+  "chunk_index": 0,
+  "chunk_content": "AI Business Assistant – Sample Knowledge Documents Fictional sample content for testing PDF text extraction and RAG ingestion. Company Profile GV Retail Solutions is a fictional business that sells consumer electronics and office equipment to individual and business customers. The company operates an online store and a small network of regional service partners. Its customer support team handles product enquiries, orders, returns and warranty questions. Product Warranty Policy New laptops and desktop computers carry a limited manufacturer warranty of one year from the date of purchase, unless the product listing states a different period. Accessories such as keyboards, mice and cables carry a six-month replacement warranty when a manufacturing defect is confirmed. Warranty claims require the original invoice or a valid order number. Physical damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should contact support@gvretailsolutions.exampl",
+  "content_length": 1000,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.pdf",
+  "chunk_index": 1,
+  "chunk_content": "cal damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should contact support@gvretailsolutions.example with their order number, product model and a short description of the issue. Returns and Refunds Customers may request a return within seven calendar days of delivery for products that are eligible for return. Products must be returned with their original packaging, accessories and invoice. Software licences, opened consumables and products damaged by misuse are not eligible for return. After the returned product passes inspection, an approved refund is normally initiated within five to seven business days. The time taken for the amount to appear depends on the payment provider. Customer Support Hours Customer support is available Monday to Saturday, from 9:30 AM to 6:00 PM Indian Standard Time. Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next work",
+  "content_length": 1000,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.pdf",
+  "chunk_index": 2,
+  "chunk_content": "Time. Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next working period. Sample RAG Questions How long is the warranty for a laptop? What is the warranty period for a keyboard? What documents are needed to make a warranty claim? How many days does a customer have to request a return? When is customer support available? -- 1 of 1 --",
+  "content_length": 421,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.txt",
+  "chunk_index": 0,
+  "chunk_content": "AI Business Assistant – Sample Knowledge Documents Fictional sample content for testing TXT text extraction and RAG ingestion. Company Profile --------------- GV Retail Solutions is a fictional business that sells consumer electronics and office equipment to individual and business customers. The company operates an online store and a small network of regional service partners. Its customer support team handles product enquiries, orders, returns and warranty questions. Product Warranty Policy ----------------------- New laptops and desktop computers carry a limited manufacturer warranty of one year from the date of purchase, unless the product listing states a different period. Accessories such as keyboards, mice and cables carry a six-month replacement warranty when a manufacturing defect is confirmed. Warranty claims require the original invoice or a valid order number. Physical damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should",
+  "content_length": 999,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.txt",
+  "chunk_index": 1,
+  "chunk_content": "l invoice or a valid order number. Physical damage, liquid damage and unauthorised repairs are not covered by the standard warranty. Customers should contact support@gvretailsolutions.example with their order number, product model and a short description of the issue. Returns and Refunds ------------------- Customers may request a return within seven calendar days of delivery for products that are eligible for return. Products must be returned with their original packaging, accessories and invoice. Software licences, opened consumables and products damaged by misuse are not eligible for return. After the returned product passes inspection, an approved refund is normally initiated within five to seven business days. The time taken for the amount to appear depends on the payment provider. Customer Support Hours ---------------------- Customer support is available Monday to Saturday, from 9:30 AM to 6:00 PM Indian Standard Time. Support is closed on Sundays and public holidays. Customers",
+  "content_length": 999,
+  "has_embedding": true
+}, {
+  "document_name": "sample-business-policy.txt",
+  "chunk_index": 2,
+  "chunk_content": "er support is available Monday to Saturday, from 9:30 AM to 6:00 PM Indian Standard Time. Support is closed on Sundays and public holidays. Customers can submit requests by email at any time; requests are handled during the next working period. Sample RAG Questions -------------------- How long is the warranty for a laptop? What is the warranty period for a keyboard? What documents are needed to make a warranty claim? How many days does a customer have to request a return? When is customer support available?",
+  "content_length": 513,
+  "has_embedding": true
+}]
+------------------------------------------
+We should see the same policy information extracted from all three files, although chunk boundaries may differ.
+
+4. Compare extracted content between formats
+
+We can also compare the total stored text length:
+
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks,
+    SUM(LENGTH(chunk_content)) AS total_characters
+FROM agent_knowledge_chunks_biz_agent
+WHERE document_name IN (
+    'sample-business-policy.pdf',
+    'sample-business-policy.docx',
+    'sample-business-policy.txt'
+)
+GROUP BY document_name
+ORDER BY document_name;
+
+
+[{
+  "document_name": "sample-business-policy.docx",
+  "total_chunks": 3,
+  "total_characters": 2410
+}, {
+  "document_name": "sample-business-policy.pdf",
+  "total_chunks": 3,
+  "total_characters": 2421
+}, {
+  "document_name": "sample-business-policy.txt",
+  "total_chunks": 3,
+  "total_characters": 2511
+}]
+
+------
+My recommendation: Upload the three files, then inspect their complete chunk_content records. This is the most important test of your document extraction service before testing RAG answers.
+===================================
+
+Excellent! This is a successful result. Your database confirms that PDF, DOCX and TXT extraction, chunking and embedding generation are all working correctly.
+All 3 formats verified
+1. Database results after upload
+12
+Total chunks
+
+3 existing + 9 new
+
+
+12/12
+Embeddings
+
+All chunks have embeddings
+
+
+
+Document	Chunks	Characters
+DOCX	3	2,410
+PDF	3	2,421
+TXT	3	2,511
+New documents total	9	7,342
+
+Your original three documents remain intact.
+2. Content extraction verification
+I inspected the returned chunk contents.
+Validation	DOCX	PDF	TXT
+Company profile	OK	OK	OK
+Warranty policy	OK	OK	OK
+Returns and refunds	OK	OK	OK
+Support hours	OK	OK	OK
+Embeddings	OK	OK	OK
+
+A few minor format differences are visible:
+- PDF includes -- 1 of 1 -- at the end.
+- DOCX and PDF have slightly different extracted character counts.
+- TXT retains its separator lines.
+These are normal extraction differences and do not indicate failed processing.
+3. One important observation about chunking
+Your chunk sizes are approximately 1,000 characters:
+File	Chunk 0	Chunk 1	Chunk 2
+DOCX	1,000	1,000	410
+PDF	1,000	1,000	421
+TXT	999	999	513
+
+The chunks contain overlapping text at their boundaries. This is expected if your text chunker uses overlap.
+
+4. Next – Test RAG search in the frontend
+Let's test these questions one by one.
+
+
+RAG QUESTIONS:
+--------------
+How long is the warranty for a laptop?
+What is the warranty period for a keyboard?
+What is the replacement policy for defective electronic products?
+Are there any conditions or exclusions under which the warranty becomes invalid?
+What should a customer do if a product develops a problem during the warranty period?
+
+
+
+-------------------
+111111111111111111
+-------------------
+How long is the warranty for a laptop?
+How long is the warranty for a laptop?
+
+AI Answer
+There is conflicting information regarding the warranty duration for a laptop across the documents: Electronics Store Warranty Policy states that Dell laptops carry a 1-year manufacturer warranty. Product Warranty Policy states that Dell laptops come with a 2-year manufacturer warranty.
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 70.52%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 65.90%
+
+What does this tell us?
+Your RAG pipeline is working across these stages:
+1. Question received
+   
+   How long is the warranty for a laptop?
+2. Semantic retrieval
+   
+   Relevant document chunks retrieved from pgvector.
+3. Context passed to Gemini
+   
+   Both warranty policies supplied as context.
+4. Conflict identification
+   
+   Gemini recognizes the one-year versus two-year difference.
+5. Source attribution
+   
+   Both document names and similarity scores returned.
+-------------------
+22222222222222222
+-------------------
+What is the warranty period for a keyboard?
+What is the warranty period for a keyboard?
+
+
+-------------------
+33333333333333333
+What is the replacement policy for defective electronic products?
+What is the replacement policy for defective electronic products?
+
+-------------------
+4444444444444444
+Are there any conditions or exclusions under which the warranty becomes invalid?
+Are there any conditions or exclusions under which the warranty becomes invalid?
+
+-------------------
+5555555555555555
+What should a customer do if a product develops a problem during the warranty period?
+What should a customer do if a product develops a problem during the warranty period?
+
+-------------------
+
+Your RAG implementation is not failing because of invalid JSON. The Gemini API free-tier daily quota has been exhausted.
+
+Your backend log confirms this:
+HTTP 429 – RESOURCE_EXHAUSTED
+Detail	Value
+AI model	gemini-3.6-flash
+Quota limit	20 requests/day
+Quota exceeded	Generate content requests
+Retry after	Approximately 52 minutes 44 seconds
+
+1. What is happening?
+Your RAG search has two major stages:
+1. searchKnowledge() – retrieves relevant document chunks using embeddings and PostgreSQL.
+2. generateContent() – sends the retrieved information to Gemini to generate the answer.
+The failure occurs at stage 2:
+const response = await gemini.models.generateContent({
+
+
+Gemini is rejecting the request before generating an answer.
+
+Therefore:
+- PostgreSQL is working.
+- Document extraction is working.
+- Knowledge chunks and embeddings are stored.
+- Semantic retrieval can still work.
+- AI-generated answers are temporarily blocked by the daily quota.
+2. What should we do?
+You have three options:
+1. Wait: Retry after the quota reset indicated by Google.
+2. Upgrade: Enable billing or use a suitable paid Gemini API tier.
+3. Reduce API usage: Cache embeddings and answers where appropriate, and avoid unnecessary Gemini calls.
+Official quota information: Gemini API Rate Limits
+3. One important improvement to our code
+We should handle HTTP 429 gracefully instead of reporting it as an invalid structured response.
+
+Eventually, we can add specific error handling around generateContent() so the frontend displays:
+The AI service has temporarily reached its daily usage limit. Please try again later.
+
+My recommendation: Don't change your RAG architecture or JSON response schema. The current issue is an API quota restriction, not a code defect.
+
+Let's first allow the quota to reset and test the same keyboard warranty question again.
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Recommended demonstration
+1. Click Delete against sample-business-policy.txt.
+2. Confirm the deletion if your application asks for confirmation.
+3. Repeat for the PDF and DOCX files.
+4. Click Refresh.
+5. Verify that the three documents disappear from the list.
+6. Upload all three files again.
+7. Ask your five RAG testing questions again.
+What happens behind the scenes?
+Your existing Delete API should ideally perform these operations:
+1. Identify the document using its document ID or name.
+2. Delete all associated chunks from PostgreSQL.
+3. Delete the corresponding vector embeddings.
+4. Ensure the document no longer appears in the Knowledge Documents list.
+Important: Do not delete the other three documents (Test Policy, Product Warranty Policy, and Electronics Store Warranty Policy) unless you also want to remove them.
+One recommendation
+For your training demonstration, use the existing UI Delete button. This demonstrates complete document lifecycle management without requiring SQL commands.
+
+You can also verify the database afterward using a SELECT query to confirm that the deleted document chunks are gone.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Table used for Business Knowledge
+Your current RAG implementation stores document chunks and embeddings in a single table:
+
+agent_knowledge_chunks_biz_agent
+
+There is no separate parent document table. Each uploaded document is represented by its chunks in this table. 
+2. Delete the three uploaded files
+Your three files are:
+- sample-business-policy.txt
+- sample-business-policy.pdf
+- sample-business-policy.docx
+Execute these statements individually:
+-- Delete TXT document chunks
+DELETE FROM agent_knowledge_chunks_biz_agent
+WHERE document_name = 'sample-business-policy.txt';
+
+-- Delete PDF document chunks
+DELETE FROM agent_knowledge_chunks_biz_agent
+WHERE document_name = 'sample-business-policy.pdf';
+
+-- Delete DOCX document chunks
+DELETE FROM agent_knowledge_chunks_biz_agent
+WHERE document_name = 'sample-business-policy.docx';
+
+
+3. Verify deletion
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+GROUP BY document_name
+ORDER BY document_name;
+
+
+4. Delete all three in one statement
+Alternatively:
+DELETE FROM agent_knowledge_chunks_biz_agent
+WHERE document_name IN (
+    'sample-business-policy.txt',
+    'sample-business-policy.pdf',
+    'sample-business-policy.docx'
+);
+
+
+Important: If your application supports multiple businesses, include the business_id condition to avoid deleting another business's documents.
+5. Recommended demonstration sequence
+1. Upload TXT, PDF and DOCX files.
+2. Verify that all three documents appear in Knowledge Documents.
+3. Ask AI questions and verify the retrieved answers.
+4. Delete the three documents from the UI.
+5. Verify that their chunks and embeddings are removed from PostgreSQL.
+6. Upload the same three files again.
+7. Ask the same questions and verify that RAG retrieval works again.
+Teaching point: This demonstrates the complete document lifecycle: Upload → Extract → Chunk → Embed → Store → Retrieve → Delete → Re-upload.

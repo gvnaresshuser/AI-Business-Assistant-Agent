@@ -1,0 +1,1 @@
+Prevent inactive businesses from logging in

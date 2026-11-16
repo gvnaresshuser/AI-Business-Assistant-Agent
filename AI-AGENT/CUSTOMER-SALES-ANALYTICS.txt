@@ -1,0 +1,45 @@
+roposed features
+1. Customers
+
+Customer Management
+- Customer listing with search.
+- Customer details and contact information.
+- View customer purchase history.
+- Total customers and active customers.
+- Customer details page.
+- Edit and delete customer.
+
+2. Sales
+
+Sales Management
+- Sales transaction listing.
+- Invoice/order number.
+- Customer name.
+- Products purchased.
+- Quantity and total amount.
+- Payment status.
+- Sales date filters.
+- View sale details.
+
+3. Analytics
+
+Business Analytics
+- Total revenue.
+- Total orders.
+- Average order value.
+- Monthly revenue chart.
+- Top-selling products.
+- Best customers.
+- Payment method distribution.
+- Sales performance trends.
+
+
+Suggested final application structure
+Module	Minimum deliverable
+Dashboard	Business overview
+AI Assistant	AI-powered business tools
+RAG Knowledge	Document-based Q&A
+Products	Product CRUD
+Customers	Customer management
+Sales	Sales transactions
+Analytics	Business intelligence charts

@@ -1,0 +1,51 @@
+Analytics module
+
+Analytics Dashboard – KPIs and summary.
+
+Monthly Sales Analysis.
+Daily Sales Trends.
+Top-Selling Products.
+Top Customers.
+Category-wise Sales.
+Payment Method Analysis.
+Inventory and Stock Analytics.
+Purchase, Vendor and Expense Analytics.
+Refund Analytics.
+
+Analytics API checklist
+We now have these nine additional reporting endpoints:
+1. Daily Sales
+2. Top Customers
+3. Category-wise Sales
+4. Payment Methods
+5. Inventory Valuation
+6. Stock Movement
+7. Purchase Summary
+8. Vendor Purchases
+9. Expense Summary
+10. Refund Summary
+
+
+E:\AI-Business-Assistant-Agent\frontend>npm run build
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.8 building client environment for production...
+✓ 3004 modules transformed.
+computing gzip size...
+dist/index.html                          0.45 kB │ gzip:   0.29 kB
+dist/assets/index-B8Sdqk2W.css          28.10 kB │ gzip:   6.23 kB
+dist/assets/purify.es-Dzkdzyfv.js       28.50 kB │ gzip:  11.42 kB
+dist/assets/index.es-DLyd5wS8.js       151.37 kB │ gzip:  48.88 kB
+dist/assets/html2canvas-CQtgQkzZ.js    199.39 kB │ gzip:  46.73 kB
+dist/assets/index-C9AFJpVk.js        1,563.58 kB │ gzip: 458.88 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.73s
+
+E:\AI-Business-Assistant-Agent\frontend>

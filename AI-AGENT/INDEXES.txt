@@ -1,0 +1,31 @@
+-- Product lookup
+CREATE INDEX idx_products_business
+ON prod_products_biz_agent(business_id);
+
+CREATE INDEX idx_products_category
+ON prod_products_biz_agent(category_id);
+
+-- Sales analysis
+CREATE INDEX idx_orders_business_date
+ON sales_orders_biz_agent(business_id, order_date);
+
+CREATE INDEX idx_orders_customer
+ON sales_orders_biz_agent(customer_id);
+
+CREATE INDEX idx_order_items_product
+ON sales_order_items_biz_agent(product_id);
+
+-- Expense analysis
+CREATE INDEX idx_expenses_business_date
+ON fin_expenses_biz_agent(business_id, expense_date);
+
+-- Inventory
+CREATE INDEX idx_stock_movements_product_date
+ON inv_stock_movements_biz_agent(product_id, movement_date);
+
+-- AI conversations
+CREATE INDEX idx_agent_sessions_user
+ON agent_sessions_biz_agent(user_id, created_at);
+
+CREATE INDEX idx_agent_messages_session
+ON agent_messages_biz_agent(session_id, created_at);

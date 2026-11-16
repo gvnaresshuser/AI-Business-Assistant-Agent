@@ -1,0 +1,3178 @@
+postgresql://neondb_owner:npg_gcz9hSD8bGuX@ep-frosty-morning-bdo0dhhg-pooler.c-8.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+
+NeonDB project
+Created
+
+- Project: AI Business Assistant Agent
+- Branch: production
+- Database: neondb
+- PostgreSQL: Connected and provisioned
+- Plan: Free
+- Region: AWS US East 2 (Ohio)
+
+Let's complete the database in this order
+1. 01_create_tables.sql – Create all 21 tables.
+2. 02_create_indexes.sql – Add primary, foreign-key and performance indexes.
+3. 03_insert_master_data.sql – Insert business, users, roles, categories, products and vendors.
+4. 04_insert_transactional_data.sql – Insert customers, orders, payments, refunds and purchases.
+5. 05_insert_sample_expenses.sql – Insert monthly business expenses.
+6. 06_analytical_queries.sql – Prepare business analytics queries.
+7. 07_database_validation.sql – Validate tables, relationships and sample records.
+
+===========================================================================================================================
+Create all 21 tables
+In Neon Console:
+1. Click SQL Editor in the left menu.
+2. Open a new SQL query.
+3. Copy the complete SQL script below.
+4. Paste it into the editor.
+5. Click Run.
+SQL Script 01
+ 01_create_tables.sql
+ 
+ 
+ Expected result
+21 tables
+Once the script executes successfully, your database should contain these tables:
+Module	Tables
+Business & Authentication	3
+Categories & Products	2
+Customers & Sales	5
+Vendors & Purchases	3
+Inventory	2
+Finance	1
+Payments & Refunds	2
+AI Agent	4
+Audit	1
+Total	23?
+
+Correction: the module breakdown above includes 23 only if the categories are counted incorrectly. The actual script contains 21 tables: 1 business, 2 authentication, 1 category, 1 product, 1 customer, 2 sales orders/items, 1 vendor, 2 purchase tables, 2 inventory tables, 1 expense, 2 payment/refund, 4 agent tables and 1 audit table.
+===========================================================================================================================
+Step 2 – Create Database Indexes.
+
+Indexes will help PostgreSQL retrieve business data faster, especially when our AI Agent answers questions such as:
+- What were my sales last month?
+- Which are my top-selling products?
+- Which products have low stock?
+- Who are my top customers?
+- Compare this month's expenses with last month.
+- Show pending payments and refunds.
+Step 2 – 02_create_indexes.sql
+
+Verify the indexes
+After running the script, execute this verification query:
+SELECT
+    tablename,
+    indexname
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND tablename LIKE '%_biz_agent'
+ORDER BY tablename, indexname;
+---------------
+[{
+  "tablename": "auth_roles_biz_agent",
+  "indexname": "auth_roles_biz_agent_business_id_id_key"
+}, {
+  "tablename": "auth_roles_biz_agent",
+  "indexname": "auth_roles_biz_agent_business_id_role_name_key"
+}, {
+  "tablename": "auth_roles_biz_agent",
+  "indexname": "auth_roles_biz_agent_pkey"
+}, {
+  "tablename": "auth_users_biz_agent",
+  "indexname": "auth_users_biz_agent_business_id_email_key"
+}, {
+  "tablename": "auth_users_biz_agent",
+  "indexname": "auth_users_biz_agent_business_id_id_key"
+}, {
+  "tablename": "auth_users_biz_agent",
+  "indexname": "auth_users_biz_agent_pkey"
+}, {
+  "tablename": "auth_users_biz_agent",
+  "indexname": "idx_users_business_role_biz_agent"
+}, {
+  "tablename": "auth_users_biz_agent",
+  "indexname": "idx_users_email_biz_agent"
+}, {
+  "tablename": "biz_businesses_biz_agent",
+  "indexname": "biz_businesses_biz_agent_pkey"
+}, {
+  "tablename": "biz_businesses_biz_agent",
+  "indexname": "idx_business_active_biz_agent"
+}, {
+  "tablename": "cat_categories_biz_agent",
+  "indexname": "cat_categories_biz_agent_business_id_category_name_key"
+}, {
+  "tablename": "cat_categories_biz_agent",
+  "indexname": "cat_categories_biz_agent_business_id_id_key"
+}, {
+  "tablename": "cat_categories_biz_agent",
+  "indexname": "cat_categories_biz_agent_pkey"
+}, {
+  "tablename": "cat_categories_biz_agent",
+  "indexname": "idx_categories_business_biz_agent"
+}, {
+  "tablename": "cust_customers_biz_agent",
+  "indexname": "cust_customers_biz_agent_business_id_id_key"
+}, {
+  "tablename": "cust_customers_biz_agent",
+  "indexname": "cust_customers_biz_agent_pkey"
+}, {
+  "tablename": "cust_customers_biz_agent",
+  "indexname": "idx_customers_email_biz_agent"
+}, {
+  "tablename": "cust_customers_biz_agent",
+  "indexname": "idx_customers_name_biz_agent"
+}, {
+  "tablename": "cust_customers_biz_agent",
+  "indexname": "idx_customers_phone_biz_agent"
+}, {
+  "tablename": "fin_expenses_biz_agent",
+  "indexname": "fin_expenses_biz_agent_pkey"
+}, {
+  "tablename": "fin_expenses_biz_agent",
+  "indexname": "idx_expenses_category_biz_agent"
+}, {
+  "tablename": "fin_expenses_biz_agent",
+  "indexname": "idx_expenses_date_biz_agent"
+}, {
+  "tablename": "inv_inventory_biz_agent",
+  "indexname": "idx_inventory_quantity_biz_agent"
+}, {
+  "tablename": "inv_inventory_biz_agent",
+  "indexname": "inv_inventory_biz_agent_business_id_id_key"
+}, {
+  "tablename": "inv_inventory_biz_agent",
+  "indexname": "inv_inventory_biz_agent_business_id_product_id_key"
+}, {
+  "tablename": "inv_inventory_biz_agent",
+  "indexname": "inv_inventory_biz_agent_pkey"
+}, {
+  "tablename": "inv_stock_movements_biz_agent",
+  "indexname": "idx_stock_date_biz_agent"
+}, {
+  "tablename": "inv_stock_movements_biz_agent",
+  "indexname": "idx_stock_product_biz_agent"
+}, {
+  "tablename": "inv_stock_movements_biz_agent",
+  "indexname": "idx_stock_type_biz_agent"
+}, {
+  "tablename": "inv_stock_movements_biz_agent",
+  "indexname": "inv_stock_movements_biz_agent_pkey"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "idx_products_active_biz_agent"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "idx_products_brand_biz_agent"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "idx_products_category_biz_agent"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "idx_products_name_biz_agent"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "prod_products_biz_agent_business_id_id_key"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "prod_products_biz_agent_business_id_sku_key"
+}, {
+  "tablename": "prod_products_biz_agent",
+  "indexname": "prod_products_biz_agent_pkey"
+}, {
+  "tablename": "purch_purchase_items_biz_agent",
+  "indexname": "idx_purchase_items_order_biz_agent"
+}, {
+  "tablename": "purch_purchase_items_biz_agent",
+  "indexname": "idx_purchase_items_product_biz_agent"
+}, {
+  "tablename": "purch_purchase_items_biz_agent",
+  "indexname": "purch_purchase_items_biz_agent_pkey"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "idx_purchase_date_biz_agent"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "idx_purchase_status_biz_agent"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "idx_purchase_vendor_biz_agent"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "purch_purchase_orders_biz_age_business_id_purchase_order_nu_key"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "purch_purchase_orders_biz_agent_business_id_id_key"
+}, {
+  "tablename": "purch_purchase_orders_biz_agent",
+  "indexname": "purch_purchase_orders_biz_agent_pkey"
+}, {
+  "tablename": "sales_order_items_biz_agent",
+  "indexname": "idx_order_items_order_biz_agent"
+}, {
+  "tablename": "sales_order_items_biz_agent",
+  "indexname": "idx_order_items_product_biz_agent"
+}, {
+  "tablename": "sales_order_items_biz_agent",
+  "indexname": "sales_order_items_biz_agent_pkey"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "idx_sales_customer_biz_agent"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "idx_sales_order_date_biz_agent"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "idx_sales_status_biz_agent"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "sales_orders_biz_agent_business_id_id_key"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "sales_orders_biz_agent_business_id_order_number_key"
+}, {
+  "tablename": "sales_orders_biz_agent",
+  "indexname": "sales_orders_biz_agent_pkey"
+}, {
+  "tablename": "sales_payments_biz_agent",
+  "indexname": "idx_payments_date_biz_agent"
+}, {
+  "tablename": "sales_payments_biz_agent",
+  "indexname": "idx_payments_order_biz_agent"
+}, {
+  "tablename": "sales_payments_biz_agent",
+  "indexname": "idx_payments_status_biz_agent"
+}, {
+  "tablename": "sales_payments_biz_agent",
+  "indexname": "sales_payments_biz_agent_pkey"
+}, {
+  "tablename": "vend_vendors_biz_agent",
+  "indexname": "idx_vendors_name_biz_agent"
+}, {
+  "tablename": "vend_vendors_biz_agent",
+  "indexname": "vend_vendors_biz_agent_business_id_id_key"
+}, {
+  "tablename": "vend_vendors_biz_agent",
+  "indexname": "vend_vendors_biz_agent_pkey"
+}]
+
+---------------
+===========================================================================================================================
+nsert master data
+This script will create:
+Master data	Records
+Demo business	1
+Roles	3
+Users	4
+Product categories	8
+Products	50
+Vendors	15
+
+Create 03_insert_master_data.sql
+Open Neon SQL Editor, paste the following script and click Run.
+
+
+Verify master data
+After the script executes, run this separate verification query:
+
+SELECT 'Businesses' AS module, COUNT(*) AS total
+FROM biz_businesses_biz_agent
+WHERE business_name = 'Demo Electronics Store'
+
+UNION ALL
+
+SELECT 'Roles', COUNT(*)
+FROM auth_roles_biz_agent r
+JOIN biz_businesses_biz_agent b ON b.id = r.business_id
+WHERE b.business_name = 'Demo Electronics Store'
+
+UNION ALL
+
+SELECT 'Users', COUNT(*)
+FROM auth_users_biz_agent u
+JOIN biz_businesses_biz_agent b ON b.id = u.business_id
+WHERE b.business_name = 'Demo Electronics Store'
+
+UNION ALL
+
+SELECT 'Categories', COUNT(*)
+FROM cat_categories_biz_agent c
+JOIN biz_businesses_biz_agent b ON b.id = c.business_id
+WHERE b.business_name = 'Demo Electronics Store'
+
+UNION ALL
+
+SELECT 'Products', COUNT(*)
+FROM prod_products_biz_agent p
+JOIN biz_businesses_biz_agent b ON b.id = p.business_id
+WHERE b.business_name = 'Demo Electronics Store'
+
+UNION ALL
+
+SELECT 'Vendors', COUNT(*)
+FROM vend_vendors_biz_agent v
+JOIN biz_businesses_biz_agent b ON b.id = v.business_id
+WHERE b.business_name = 'Demo Electronics Store';
+------------
+[{
+  "module": "Businesses",
+  "total": 1
+}, {
+  "module": "Roles",
+  "total": 3
+}, {
+  "module": "Users",
+  "total": 4
+}, {
+  "module": "Categories",
+  "total": 8
+}, {
+  "module": "Products",
+  "total": 0
+}, {
+  "module": "Vendors",
+  "total": 15
+}]
+
+------------
+Verify products
+
+SELECT
+    c.category_name,
+    COUNT(p.id) AS total_products
+FROM cat_categories_biz_agent c
+LEFT JOIN prod_products_biz_agent p
+    ON p.category_id = c.id
+   AND p.business_id = c.business_id
+GROUP BY c.category_name
+ORDER BY c.category_name;
+
+
+[{
+  "category_name": "Accessories",
+  "total_products": 7
+}, {
+  "category_name": "Audio",
+  "total_products": 6
+}, {
+  "category_name": "Cameras",
+  "total_products": 5
+}, {
+  "category_name": "Laptops",
+  "total_products": 8
+}, {
+  "category_name": "Mobiles",
+  "total_products": 8
+}, {
+  "category_name": "Networking",
+  "total_products": 5
+}, {
+  "category_name": "Storage",
+  "total_products": 5
+}, {
+  "category_name": "Televisions",
+  "total_products": 6
+}]
+
+===========================================================================================================================
+Next: Step 4 – Customer data
+We'll create 200 realistic customers for our demo electronics business.
+===========================================================================================================================
+Insert 200 customers
+Create a new SQL query in Neon SQL Editor and execute this script.
+
+Script: 04_insert_customers.sql
+
+Verify customers
+Execute this query:
+
+SELECT
+    customer_type,
+    COUNT(*) AS total_customers
+FROM cust_customers_biz_agent c
+JOIN biz_businesses_biz_agent b
+    ON b.id = c.business_id
+WHERE b.business_name = 'Demo Electronics Store'
+GROUP BY customer_type
+ORDER BY customer_type;
+
+
+[{
+  "customer_type": "New",
+  "total_customers": 100
+}, {
+  "customer_type": "Premium",
+  "total_customers": 40
+}, {
+  "customer_type": "Regular",
+  "total_customers": 60
+}]
+
+Check customer records
+
+SELECT
+    customer_name,
+    email,
+    city,
+    state,
+    customer_type
+FROM cust_customers_biz_agent
+ORDER BY customer_name
+LIMIT 10;
+
+[{
+  "customer_name": "Customer 001",
+  "email": "customer1@example.com",
+  "city": "Visakhapatnam",
+  "state": "Andhra Pradesh",
+  "customer_type": "Premium"
+}, {
+  "customer_name": "Customer 002",
+  "email": "customer2@example.com",
+  "city": "Hyderabad",
+  "state": "Telangana",
+  "customer_type": "Regular"
+}, {
+  "customer_name": "Customer 003",
+  "email": "customer3@example.com",
+  "city": "Vijayawada",
+  "state": "Andhra Pradesh",
+  "customer_type": "Regular"
+}, {
+  "customer_name": "Customer 004",
+  "email": "customer4@example.com",
+  "city": "Bengaluru",
+  "state": "Karnataka",
+  "customer_type": "Regular"
+}, {
+  "customer_name": "Customer 005",
+  "email": "customer5@example.com",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "customer_type": "New"
+}, {
+  "customer_name": "Customer 006",
+  "email": "customer6@example.com",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "customer_type": "New"
+}, {
+  "customer_name": "Customer 007",
+  "email": "customer7@example.com",
+  "city": "Pune",
+  "state": "Maharashtra",
+  "customer_type": "New"
+}, {
+  "customer_name": "Customer 008",
+  "email": "customer8@example.com",
+  "city": "Delhi",
+  "state": "Delhi",
+  "customer_type": "New"
+}, {
+  "customer_name": "Customer 009",
+  "email": "customer9@example.com",
+  "city": "Kolkata",
+  "state": "West Bengal",
+  "customer_type": "New"
+}, {
+  "customer_name": "Customer 010",
+  "email": "customer10@example.com",
+  "city": "Guntur",
+  "state": "Andhra Pradesh",
+  "customer_type": "Premium"
+}]
+
+===========================================================================================================================
+Database progress
+1. 21 database tables created
+   Completed
+2. Database indexes created
+   Completed
+3. Master data – 81 records
+   Completed
+4. 200 customers
+   Completed
+5. Sales, orders, payments and refunds
+   Next
+===========================================================================================================================
+Now we're moving to the most important part of our AI Business Assistant Agent: historical sales data.
+
+We'll generate:
+- 1,500 sales orders.
+- 3,000 order items (two products per order).
+- Sales dates covering 1 November 2025 to 31 October 2026.
+- Different customers and products.
+- Delivered, shipped, processing, pending and cancelled orders.
+- Realistic discounts, GST and shipping charges.
+- Product cost snapshots for historical profit calculations.
+
+05_insert_sales_orders.sql
+
+Verify sales orders
+Execute:
+SELECT
+    order_status,
+    COUNT(*) AS total_orders,
+    ROUND(SUM(total_amount), 2) AS order_value
+FROM sales_orders_biz_agent
+GROUP BY order_status
+ORDER BY order_status;
+
+[{
+  "order_status": "Cancelled",
+  "total_orders": 75,
+  "order_value": 12288471.00
+}, {
+  "order_status": "Delivered",
+  "total_orders": 1200,
+  "order_value": 241432133.30
+}, {
+  "order_status": "Pending",
+  "total_orders": 75,
+  "order_value": 17436519.50
+}, {
+  "order_status": "Processing",
+  "total_orders": 75,
+  "order_value": 17831341.00
+}, {
+  "order_status": "Shipped",
+  "total_orders": 75,
+  "order_value": 13336072.40
+}]
+
+
+Step 5B – Verify order items
+SELECT
+    COUNT(*) AS total_order_items,
+    SUM(quantity) AS total_units_sold
+FROM sales_order_items_biz_agent;
+
+[{
+  "total_order_items": 3000,
+  "total_units_sold": 6000
+}]
+
+
+Expected: 3,000 order items.
+Step 5C – Verify monthly sales
+SELECT
+    TO_CHAR(order_date, 'YYYY-MM') AS sales_month,
+    COUNT(*) AS total_orders,
+    ROUND(SUM(total_amount), 2) AS total_order_value
+FROM sales_orders_biz_agent
+WHERE order_status <> 'Cancelled'
+GROUP BY TO_CHAR(order_date, 'YYYY-MM')
+ORDER BY sales_month;
+
+[{
+  "sales_month": "2025-11",
+  "total_orders": 118,
+  "total_order_value": 23527472.56
+}, {
+  "sales_month": "2025-12",
+  "total_orders": 122,
+  "total_order_value": 25955209.30
+}, {
+  "sales_month": "2026-01",
+  "total_orders": 118,
+  "total_order_value": 24133212.52
+}, {
+  "sales_month": "2026-02",
+  "total_orders": 112,
+  "total_order_value": 22369367.16
+}, {
+  "sales_month": "2026-03",
+  "total_orders": 122,
+  "total_order_value": 24109894.24
+}, {
+  "sales_month": "2026-04",
+  "total_orders": 114,
+  "total_order_value": 23800322.58
+}, {
+  "sales_month": "2026-05",
+  "total_orders": 122,
+  "total_order_value": 25054855.64
+}, {
+  "sales_month": "2026-06",
+  "total_orders": 119,
+  "total_order_value": 24364547.73
+}, {
+  "sales_month": "2026-07",
+  "total_orders": 118,
+  "total_order_value": 24245861.28
+}, {
+  "sales_month": "2026-08",
+  "total_orders": 123,
+  "total_order_value": 23859401.04
+}, {
+  "sales_month": "2026-09",
+  "total_orders": 119,
+  "total_order_value": 24698868.15
+}, {
+  "sales_month": "2026-10",
+  "total_orders": 118,
+  "total_order_value": 23917054.00
+}]
+
+===========================================================================================================================
+Generate payment records
+Now let's populate sales_payments_biz_agent.
+
+Our rules:
+- Delivered orders → Completed payment.
+- Shipped orders → Completed payment.
+- Processing orders → Pending payment.
+- Pending orders → Pending payment.
+- Cancelled orders → No payment record.
+- Payment amount → Matches the order total.
+SQL Script: 06_insert_payments.sql
+
+
+Verify payments
+Execute:
+SELECT
+    payment_status,
+    COUNT(*) AS total_payments,
+    ROUND(SUM(amount), 2) AS payment_amount
+FROM sales_payments_biz_agent
+GROUP BY payment_status
+ORDER BY payment_status;
+
+[{
+  "payment_status": "Completed",
+  "total_payments": 1275,
+  "payment_amount": 254768205.70
+}, {
+  "payment_status": "Pending",
+  "total_payments": 150,
+  "payment_amount": 35267860.50
+}]
+
+
+
+SELECT
+    COUNT(*) AS total_non_cancelled_orders,
+    COUNT(p.id) AS orders_with_payment,
+    COUNT(*) FILTER (
+        WHERE p.amount = o.total_amount
+    ) AS matching_payment_amounts
+FROM sales_orders_biz_agent o
+LEFT JOIN sales_payments_biz_agent p
+    ON p.business_id = o.business_id
+   AND p.order_id = o.id
+WHERE o.order_status <> 'Cancelled';
+
+
+[{
+  "total_non_cancelled_orders": 1425,
+  "orders_with_payment": 1425,
+  "matching_payment_amounts": 1425
+}]
+
+===========================================================================================================================
+Create the missing refunds table
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS
+uq_payments_business_id_id_biz_agent
+ON sales_payments_biz_agent(business_id, id);
+
+CREATE TABLE IF NOT EXISTS sales_refunds_biz_agent (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    business_id UUID NOT NULL,
+    order_id UUID NOT NULL,
+    payment_id UUID,
+
+    refund_reference VARCHAR(100),
+    refund_date TIMESTAMPTZ DEFAULT NOW(),
+    refund_reason TEXT,
+
+    refund_status VARCHAR(30) DEFAULT 'Pending',
+    amount NUMERIC(12,2) NOT NULL,
+
+    CHECK (amount > 0),
+
+    CHECK (
+        refund_status IN ('Pending', 'Completed', 'Failed')
+    ),
+
+    FOREIGN KEY (business_id, order_id)
+        REFERENCES sales_orders_biz_agent(business_id, id),
+
+    FOREIGN KEY (business_id, payment_id)
+        REFERENCES sales_payments_biz_agent(business_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_refunds_order_biz_agent
+ON sales_refunds_biz_agent(business_id, order_id);
+
+CREATE INDEX IF NOT EXISTS idx_refunds_date_biz_agent
+ON sales_refunds_biz_agent(business_id, refund_date);
+
+CREATE INDEX IF NOT EXISTS idx_refunds_status_biz_agent
+ON sales_refunds_biz_agent(business_id, refund_status);
+
+
+SELECT
+    table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name = 'sales_refunds_biz_agent';
+===========================================================================================================================
+
+Generate 30 refund records
+We'll create:
+- 20 full refunds.
+- 10 partial refunds.
+- All refunds linked to completed payments.
+- Refund status: Completed.
+Script: 07_insert_refunds.sql
+===========================================================================================================================
+INSERT REFUNDS - 07_insert_refunds.sql
+
+
+SELECT
+    refund_status,
+    COUNT(*) AS total_refunds,
+    ROUND(SUM(amount), 2) AS total_refund_amount
+FROM sales_refunds_biz_agent
+GROUP BY refund_status;
+
+[{
+  "refund_status": "Completed",
+  "total_refunds": 30,
+  "total_refund_amount": 4583917.23
+}]
+
+===========================================================================================================================
+Full vs partial refunds
+Execute:
+SELECT
+    CASE
+        WHEN r.amount = o.total_amount THEN 'Full Refund'
+        ELSE 'Partial Refund'
+    END AS refund_type,
+    COUNT(*) AS total_records,
+    ROUND(SUM(r.amount), 2) AS refund_amount
+FROM sales_refunds_biz_agent r
+JOIN sales_orders_biz_agent o
+    ON o.business_id = r.business_id
+   AND o.id = r.order_id
+GROUP BY refund_type
+ORDER BY refund_type;
+
+[{
+  "refund_type": "Full Refund",
+  "total_records": 20,
+  "refund_amount": 3436585.17
+}, {
+  "refund_type": "Partial Refund",
+  "total_records": 10,
+  "refund_amount": 1147332.06
+}]
+
+===========================================================================================================================
+Database progress
+Completed
+Sales and payment foundation
+
+- 1,500 sales orders
+- 3,000 order items
+- 1,425 payment records
+- 30 refund records
+- 12 months of sales history
+===========================================================================================================================
+Next: Step 8 – Purchase orders
+
+08_insert_purchase_orders.sql
+
+Verify purchase orders
+SELECT
+    status,
+    COUNT(*) AS total_orders,
+    ROUND(SUM(total_amount), 2) AS purchase_value
+FROM purch_purchase_orders_biz_agent
+GROUP BY status
+ORDER BY status;
+
+[{
+  "status": "Approved",
+  "total_orders": 10,
+  "purchase_value": 7745600.00
+}, {
+  "status": "Ordered",
+  "total_orders": 10,
+  "purchase_value": 15152200.00
+}, {
+  "status": "Partially Received",
+  "total_orders": 10,
+  "purchase_value": 9073800.00
+}, {
+  "status": "Pending",
+  "total_orders": 10,
+  "purchase_value": 14401200.00
+}, {
+  "status": "Received",
+  "total_orders": 60,
+  "purchase_value": 61727360.00
+}]
+
+
+Step 8B – Verify purchase items
+SELECT
+    COUNT(*) AS total_purchase_items,
+    SUM(quantity) AS total_quantity,
+    SUM(received_quantity) AS total_received_quantity
+FROM purch_purchase_items_biz_agent;
+
+[{
+  "total_purchase_items": 250,
+  "total_quantity": 3064,
+  "total_received_quantity": 1932
+}]
+
+===========================================================================================================================
+09_insert_inventory.sql
+
+
+Verify inventory
+SELECT
+    COUNT(*) AS total_inventory_records,
+    SUM(quantity_on_hand) AS total_stock,
+    SUM(quantity_available) AS available_stock
+FROM inv_inventory_biz_agent;
+
+[{
+  "total_inventory_records": 50,
+  "total_stock": 687,
+  "available_stock": 687
+}]
+
+
+Expected: 50 inventory records.
+Step 9B – Identify low-stock products
+SELECT
+    p.product_name,
+    p.sku,
+    i.quantity_on_hand,
+    i.quantity_available,
+    p.reorder_level,
+    CASE
+        WHEN i.quantity_available = 0 THEN 'Out of Stock'
+        WHEN i.quantity_available <= p.reorder_level THEN 'Low Stock'
+        ELSE 'Healthy Stock'
+    END AS stock_status
+FROM inv_inventory_biz_agent i
+JOIN prod_products_biz_agent p
+    ON p.business_id = i.business_id
+   AND p.id = i.product_id
+ORDER BY i.quantity_available ASC;
+
+[{
+  "product_name": "Dell XPS 14",
+  "sku": "LAP002",
+  "quantity_on_hand": 0,
+  "quantity_available": 0,
+  "reorder_level": 3,
+  "stock_status": "Out of Stock"
+}, {
+  "product_name": "Samsung 1TB SSD",
+  "sku": "STR001",
+  "quantity_on_hand": 0,
+  "quantity_available": 0,
+  "reorder_level": 10,
+  "stock_status": "Out of Stock"
+}, {
+  "product_name": "Bose Soundbar",
+  "sku": "AUD003",
+  "quantity_on_hand": 0,
+  "quantity_available": 0,
+  "reorder_level": 5,
+  "stock_status": "Out of Stock"
+}, {
+  "product_name": "TCL 43 inch Smart TV",
+  "sku": "TV006",
+  "quantity_on_hand": 0,
+  "quantity_available": 0,
+  "reorder_level": 5,
+  "stock_status": "Out of Stock"
+}, {
+  "product_name": "iPhone 17 Pro",
+  "sku": "MOB004",
+  "quantity_on_hand": 0,
+  "quantity_available": 0,
+  "reorder_level": 3,
+  "stock_status": "Out of Stock"
+}, {
+  "product_name": "HP Spectre x360",
+  "sku": "LAP004",
+  "quantity_on_hand": 1,
+  "quantity_available": 1,
+  "reorder_level": 3,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "OnePlus 14",
+  "sku": "MOB005",
+  "quantity_on_hand": 3,
+  "quantity_available": 3,
+  "reorder_level": 5,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "Apple AirPods Pro",
+  "sku": "AUD005",
+  "quantity_on_hand": 3,
+  "quantity_available": 3,
+  "reorder_level": 5,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "HP Pavilion 15",
+  "sku": "LAP003",
+  "quantity_on_hand": 3,
+  "quantity_available": 3,
+  "reorder_level": 5,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "OnePlus Nord 6",
+  "sku": "MOB006",
+  "quantity_on_hand": 3,
+  "quantity_available": 3,
+  "reorder_level": 5,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "WD 2TB External HDD",
+  "sku": "STR002",
+  "quantity_on_hand": 8,
+  "quantity_available": 8,
+  "reorder_level": 10,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "Sony Alpha A6400",
+  "sku": "CAM002",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Samsung 55 inch QLED TV",
+  "sku": "TV002",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Sony Bravia 50 inch",
+  "sku": "TV005",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Nikon Z50",
+  "sku": "CAM003",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Google Pixel 11",
+  "sku": "MOB008",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "LG 55 inch OLED TV",
+  "sku": "TV004",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Apple MacBook Air",
+  "sku": "LAP007",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Canon EOS R50",
+  "sku": "CAM001",
+  "quantity_on_hand": 13,
+  "quantity_available": 13,
+  "reorder_level": 3,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Seagate 4TB HDD",
+  "sku": "STR005",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "JBL Party Speaker",
+  "sku": "AUD006",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "GoPro Hero",
+  "sku": "CAM005",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Dell Inspiron 15",
+  "sku": "LAP001",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Lenovo IdeaPad Slim 5",
+  "sku": "LAP005",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Lenovo ThinkPad E14",
+  "sku": "LAP006",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Asus Vivobook 16",
+  "sku": "LAP008",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Samsung Galaxy S26",
+  "sku": "MOB001",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Samsung Galaxy A56",
+  "sku": "MOB002",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "iPhone 17",
+  "sku": "MOB003",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Netgear Mesh WiFi",
+  "sku": "NET003",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Crucial 2TB SSD",
+  "sku": "STR004",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Samsung 43 inch Smart TV",
+  "sku": "TV001",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "LG 43 inch LED TV",
+  "sku": "TV003",
+  "quantity_on_hand": 15,
+  "quantity_available": 15,
+  "reorder_level": 5,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Boat Airdopes",
+  "sku": "AUD004",
+  "quantity_on_hand": 18,
+  "quantity_available": 18,
+  "reorder_level": 20,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "SanDisk 128GB Pen Drive",
+  "sku": "STR003",
+  "quantity_on_hand": 18,
+  "quantity_available": 18,
+  "reorder_level": 20,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "Wireless Mouse",
+  "sku": "ACC002",
+  "quantity_on_hand": 18,
+  "quantity_available": 18,
+  "reorder_level": 20,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "TP Link 8 Port Switch",
+  "sku": "NET004",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "TP Link WiFi Adapter",
+  "sku": "NET005",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Laptop Backpack",
+  "sku": "ACC007",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Laptop Cooling Pad",
+  "sku": "ACC004",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Redmi Note 15",
+  "sku": "MOB007",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "TP Link WiFi 6 Router",
+  "sku": "NET001",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "D Link Gigabit Router",
+  "sku": "NET002",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "JBL Bluetooth Speaker",
+  "sku": "AUD002",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Sony Wireless Headphones",
+  "sku": "AUD001",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Mechanical Keyboard",
+  "sku": "ACC003",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "65W Fast Charger",
+  "sku": "ACC005",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "Logitech C920 Webcam",
+  "sku": "CAM004",
+  "quantity_on_hand": 20,
+  "quantity_available": 20,
+  "reorder_level": 10,
+  "stock_status": "Healthy Stock"
+}, {
+  "product_name": "USB C Cable",
+  "sku": "ACC001",
+  "quantity_on_hand": 28,
+  "quantity_available": 28,
+  "reorder_level": 30,
+  "stock_status": "Low Stock"
+}, {
+  "product_name": "HDMI Cable",
+  "sku": "ACC006",
+  "quantity_on_hand": 30,
+  "quantity_available": 30,
+  "reorder_level": 20,
+  "stock_status": "Healthy Stock"
+}]
+
+
+Step 9C – Stock status summary
+SELECT
+    CASE
+        WHEN i.quantity_available = 0 THEN 'Out of Stock'
+        WHEN i.quantity_available <= p.reorder_level THEN 'Low Stock'
+        ELSE 'Healthy Stock'
+    END AS stock_status,
+    COUNT(*) AS total_products
+FROM inv_inventory_biz_agent i
+JOIN prod_products_biz_agent p
+    ON p.business_id = i.business_id
+   AND p.id = i.product_id
+GROUP BY stock_status
+ORDER BY stock_status;
+
+[{
+  "stock_status": "Healthy Stock",
+  "total_products": 35
+}, {
+  "stock_status": "Low Stock",
+  "total_products": 10
+}, {
+  "stock_status": "Out of Stock",
+  "total_products": 5
+}]
+
+===========================================================================================================================
+SELECT
+    column_name,
+    data_type,
+    is_nullable
+FROM information_schema.columns
+WHERE table_name = 'inv_stock_movements_biz_agent'
+ORDER BY ordinal_position;
+[{
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "column_name": "product_id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "column_name": "movement_type",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "column_name": "quantity",
+  "data_type": "integer",
+  "is_nullable": "NO"
+}, {
+  "column_name": "reference_type",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "column_name": "reference_id",
+  "data_type": "uuid",
+  "is_nullable": "YES"
+}, {
+  "column_name": "movement_date",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "column_name": "notes",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}]
+
+===========================================================================================================================
+Generate stock movement records
+
+BEGIN;
+
+-- 1. Purchase receipt movements
+-- Use received purchase quantities as inbound stock movements.
+
+INSERT INTO inv_stock_movements_biz_agent
+(
+    business_id,
+    product_id,
+    movement_type,
+    quantity,
+    reference_type,
+    reference_id,
+    movement_date,
+    notes
+)
+SELECT
+    pi.business_id,
+    pi.product_id,
+    'PURCHASE_RECEIPT',
+    pi.received_quantity,
+    'PURCHASE_ORDER',
+    pi.purchase_order_id,
+    po.order_date,
+    'Historical purchase receipt - demo data'
+FROM purch_purchase_items_biz_agent pi
+JOIN purch_purchase_orders_biz_agent po
+    ON po.business_id = pi.business_id
+   AND po.id = pi.purchase_order_id
+WHERE pi.received_quantity > 0
+  AND po.status IN ('Received', 'Partially Received')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM inv_stock_movements_biz_agent sm
+      WHERE sm.reference_type = 'PURCHASE_ORDER'
+        AND sm.reference_id = pi.purchase_order_id
+        AND sm.product_id = pi.product_id
+        AND sm.movement_type = 'PURCHASE_RECEIPT'
+  );
+
+-- 2. Sales movements
+-- Select 150 delivered orders and create one movement
+-- for each order item in those orders.
+
+WITH selected_orders AS (
+    SELECT
+        id,
+        business_id
+    FROM sales_orders_biz_agent
+    WHERE order_status = 'Delivered'
+    ORDER BY order_date DESC, id
+    LIMIT 150
+)
+INSERT INTO inv_stock_movements_biz_agent
+(
+    business_id,
+    product_id,
+    movement_type,
+    quantity,
+    reference_type,
+    reference_id,
+    movement_date,
+    notes
+)
+SELECT
+    oi.business_id,
+    oi.product_id,
+    'SALE',
+    -oi.quantity,
+    'SALES_ORDER',
+    oi.order_id,
+    so.order_date,
+    'Historical delivered sale - demo data'
+FROM sales_order_items_biz_agent oi
+JOIN selected_orders selected
+    ON selected.business_id = oi.business_id
+   AND selected.id = oi.order_id
+JOIN sales_orders_biz_agent so
+    ON so.business_id = oi.business_id
+   AND so.id = oi.order_id
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM inv_stock_movements_biz_agent sm
+    WHERE sm.reference_type = 'SALES_ORDER'
+      AND sm.reference_id = oi.order_id
+      AND sm.product_id = oi.product_id
+      AND sm.movement_type = 'SALE'
+);
+
+-- 3. Customer return movements
+-- Use 20 completed refund records as demonstration references.
+
+WITH selected_refunds AS (
+    SELECT
+        id,
+        business_id,
+        order_id,
+        refund_date
+    FROM sales_refunds_biz_agent
+    WHERE status = 'Completed'
+    ORDER BY refund_date DESC NULLS LAST, id
+    LIMIT 20
+)
+INSERT INTO inv_stock_movements_biz_agent
+(
+    business_id,
+    product_id,
+    movement_type,
+    quantity,
+    reference_type,
+    reference_id,
+    movement_date,
+    notes
+)
+SELECT
+    oi.business_id,
+    oi.product_id,
+    'CUSTOMER_RETURN',
+    1,
+    'SALES_ORDER',
+    sr.order_id,
+    COALESCE(sr.refund_date, NOW()),
+    'Sample customer return associated with completed refund'
+FROM selected_refunds sr
+JOIN sales_order_items_biz_agent oi
+    ON oi.business_id = sr.business_id
+   AND oi.order_id = sr.order_id
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM inv_stock_movements_biz_agent sm
+    WHERE sm.reference_type = 'SALES_ORDER'
+      AND sm.reference_id = sr.order_id
+      AND sm.product_id = oi.product_id
+      AND sm.movement_type = 'CUSTOMER_RETURN'
+);
+
+-- 4. Stock adjustment movements
+-- Create 10 sample adjustments.
+
+INSERT INTO inv_stock_movements_biz_agent
+(
+    business_id,
+    product_id,
+    movement_type,
+    quantity,
+    reference_type,
+    movement_date,
+    notes
+)
+SELECT
+    p.business_id,
+    p.id,
+    'ADJUSTMENT',
+    CASE
+        WHEN ROW_NUMBER() OVER (ORDER BY p.sku) % 2 = 0
+            THEN -1
+        ELSE 1
+    END,
+    'STOCK_AUDIT',
+    NOW() - INTERVAL '5 days',
+    'Sample stock audit adjustment - demo data'
+FROM prod_products_biz_agent p
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM inv_stock_movements_biz_agent sm
+    WHERE sm.product_id = p.id
+      AND sm.business_id = p.business_id
+      AND sm.reference_type = 'STOCK_AUDIT'
+)
+ORDER BY p.sku
+LIMIT 10;
+
+COMMIT;
+===========================================================================================================================
+SELECT
+    movement_type,
+    COUNT(*) AS total_movements,
+    SUM(quantity) AS total_quantity
+FROM inv_stock_movements_biz_agent
+GROUP BY movement_type
+ORDER BY movement_type;
+
+[{
+  "movement_type": "Adjustment",
+  "total_movements": 5,
+  "total_quantity": 5
+}, {
+  "movement_type": "Damage",
+  "total_movements": 5,
+  "total_quantity": 5
+}, {
+  "movement_type": "Purchase",
+  "total_movements": 170,
+  "total_quantity": 1932
+}, {
+  "movement_type": "Return",
+  "total_movements": 40,
+  "total_quantity": 40
+}, {
+  "movement_type": "Sale",
+  "total_movements": 300,
+  "total_quantity": 601
+}]
+
+
+SELECT
+    COUNT(*) AS total_movements,
+    COUNT(DISTINCT product_id) AS products_with_movements,
+    COUNT(DISTINCT reference_id) AS referenced_documents
+FROM inv_stock_movements_biz_agent;
+
+
+
+[{
+  "total_movements": 520,
+  "products_with_movements": 50,
+  "referenced_documents": 240
+}]
+
+===========================================================================================================================
+SELECT
+    column_name,
+    data_type,
+    is_nullable
+FROM information_schema.columns
+WHERE table_name = 'fin_expenses_biz_agent'
+ORDER BY ordinal_position;
+[{
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "column_name": "business_id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "column_name": "expense_category",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "column_name": "description",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "column_name": "amount",
+  "data_type": "numeric",
+  "is_nullable": "NO"
+}, {
+  "column_name": "expense_date",
+  "data_type": "date",
+  "is_nullable": "NO"
+}, {
+  "column_name": "payment_method",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "column_name": "reference_number",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}]
+
+===========================================================================================================================
+Insert operating expenses
+We'll create 8 expense categories, with 5 entries per month (60 records total):
+1. Rent
+2. Salaries
+3. Electricity
+4. Internet
+5. Marketing
+6. Transportation
+7. Software
+8. Maintenance
+
+SELECT
+    COUNT(*) AS total_expense_records,
+    SUM(amount) AS total_operating_expenses,
+    MIN(expense_date) AS first_expense_date,
+    MAX(expense_date) AS last_expense_date
+FROM fin_expenses_biz_agent;
+
+[{
+  "total_expense_records": 60,
+  "total_operating_expenses": 1717675.00,
+  "first_expense_date": "2025-11-05",
+  "last_expense_date": "2026-10-17"
+}]
+
+SELECT
+    expense_category,
+    COUNT(*) AS total_records,
+    SUM(amount) AS total_amount
+FROM fin_expenses_biz_agent
+GROUP BY expense_category
+ORDER BY total_amount DESC;
+
+[{
+  "expense_category": "Salaries",
+  "total_records": 12,
+  "total_amount": 1032750.00
+}, {
+  "expense_category": "Rent",
+  "total_records": 12,
+  "total_amount": 421750.00
+}, {
+  "expense_category": "Marketing",
+  "total_records": 12,
+  "total_amount": 143400.00
+}, {
+  "expense_category": "Electricity",
+  "total_records": 12,
+  "total_amount": 102000.00
+}, {
+  "expense_category": "Internet",
+  "total_records": 12,
+  "total_amount": 17775.00
+}]
+
+===========================================================================================================================
+SELECT
+    expected.table_name,
+    CASE
+        WHEN actual.table_name IS NOT NULL THEN 'EXISTS'
+        ELSE 'MISSING'
+    END AS table_status
+FROM (
+    VALUES
+    ('biz_businesses_biz_agent'),
+    ('auth_users_biz_agent'),
+    ('auth_roles_biz_agent'),
+    ('cat_categories_biz_agent'),
+    ('prod_products_biz_agent'),
+    ('cust_customers_biz_agent'),
+    ('sales_orders_biz_agent'),
+    ('sales_order_items_biz_agent'),
+    ('vend_vendors_biz_agent'),
+    ('purch_purchase_orders_biz_agent'),
+    ('purch_purchase_items_biz_agent'),
+    ('inv_inventory_biz_agent'),
+    ('inv_stock_movements_biz_agent'),
+    ('fin_expenses_biz_agent'),
+    ('agent_sessions_biz_agent'),
+    ('agent_messages_biz_agent'),
+    ('agent_tool_logs_biz_agent'),
+    ('agent_reports_biz_agent'),
+    ('audit_logs_biz_agent'),
+    ('sales_payments_biz_agent'),
+    ('sales_refunds_biz_agent')
+) AS expected(table_name)
+LEFT JOIN information_schema.tables actual
+    ON actual.table_schema = 'public'
+   AND actual.table_name = expected.table_name
+ORDER BY expected.table_name;
+===========================================================================================================================
+Create the five missing tables
+The design will support:
+Table	Purpose
+agent_sessions_biz_agent	Conversation sessions
+agent_messages_biz_agent	User and AI conversation messages
+agent_tool_logs_biz_agent	Gemini function/tool execution history
+agent_reports_biz_agent	Generated business reports
+audit_logs_biz_agent	Important user and system activities
+
+12-five-missing-tables.sql
+===========================================================================================================================
+Verify all 21 tables
+After successful execution, run:
+SELECT
+    COUNT(*) AS total_expected_tables,
+    COUNT(*) FILTER (
+        WHERE actual.table_name IS NOT NULL
+    ) AS existing_tables,
+    COUNT(*) FILTER (
+        WHERE actual.table_name IS NULL
+    ) AS missing_tables
+FROM (
+    VALUES
+    ('biz_businesses_biz_agent'),
+    ('auth_users_biz_agent'),
+    ('auth_roles_biz_agent'),
+    ('cat_categories_biz_agent'),
+    ('prod_products_biz_agent'),
+    ('cust_customers_biz_agent'),
+    ('sales_orders_biz_agent'),
+    ('sales_order_items_biz_agent'),
+    ('vend_vendors_biz_agent'),
+    ('purch_purchase_orders_biz_agent'),
+    ('purch_purchase_items_biz_agent'),
+    ('inv_inventory_biz_agent'),
+    ('inv_stock_movements_biz_agent'),
+    ('fin_expenses_biz_agent'),
+    ('agent_sessions_biz_agent'),
+    ('agent_messages_biz_agent'),
+    ('agent_tool_logs_biz_agent'),
+    ('agent_reports_biz_agent'),
+    ('audit_logs_biz_agent'),
+    ('sales_payments_biz_agent'),
+    ('sales_refunds_biz_agent')
+) AS expected(table_name)
+LEFT JOIN information_schema.tables actual
+    ON actual.table_schema = 'public'
+   AND actual.table_name = expected.table_name;
+   
+   [{
+  "total_expected_tables": 21,
+  "existing_tables": 21,
+  "missing_tables": 0
+}]
+
+===========================================================================================================================
+What we have prepared
+Module	Tables
+Business and authentication	3
+Categories and products	2
+Customers	1
+Sales, orders, payments and refunds	4
+Vendors and purchases	3
+Inventory and stock movements	2
+Expenses	1
+AI agent sessions, messages, tools and reports	4
+Audit logs	1
+Total	21
+===========================================================================================================================
+List all foreign keys
+
+SELECT
+    tc.table_name AS child_table,
+    kcu.column_name AS child_column,
+    ccu.table_name AS parent_table,
+    ccu.column_name AS parent_column,
+    tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+   AND tc.constraint_schema = kcu.constraint_schema
+JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name
+   AND ccu.constraint_schema = tc.constraint_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_schema = 'public'
+  AND tc.table_name LIKE '%_biz_agent'
+ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position;
+
+[{
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "session_id",
+  "parent_table": "agent_sessions_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_session_id_fkey"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_user_id_fkey"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_reports_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "child_column": "generated_by",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_reports_biz_agent_generated_by_fkey"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_sessions_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_sessions_biz_agent_user_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "message_id",
+  "parent_table": "agent_messages_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_message_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "session_id",
+  "parent_table": "agent_sessions_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_session_id_fkey"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "audit_logs_biz_agent_business_id_fkey"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "audit_logs_biz_agent_user_id_fkey"
+}, {
+  "child_table": "auth_roles_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_roles_biz_agent_business_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "role_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "role_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "cat_categories_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "cat_categories_biz_agent_business_id_fkey"
+}, {
+  "child_table": "cust_customers_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "cust_customers_biz_agent_business_id_fkey"
+}, {
+  "child_table": "fin_expenses_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "fin_expenses_biz_agent_business_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "category_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "category_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "purchase_order_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "purchase_order_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "vendor_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "vendor_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "customer_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "customer_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "payment_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "payment_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "vend_vendors_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "vend_vendors_biz_agent_business_id_fkey"
+}]
+
+===========================================================================================================================
+Count foreign keys
+
+SELECT
+    COUNT(*) AS total_foreign_key_constraints
+FROM information_schema.table_constraints
+WHERE constraint_type = 'FOREIGN KEY'
+  AND table_schema = 'public'
+  AND table_name LIKE '%_biz_agent';
+  
+  [{
+  "total_foreign_key_constraints": 34
+}]
+
+===========================================================================================================================
+Review all foreign-key relationships
+
+SELECT
+    tc.table_name AS child_table,
+    kcu.column_name AS child_column,
+    ccu.table_name AS parent_table,
+    ccu.column_name AS parent_column,
+    tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+   AND tc.constraint_schema = kcu.constraint_schema
+JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name
+   AND ccu.constraint_schema = tc.constraint_schema
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_schema = 'public'
+  AND tc.table_name LIKE '%_biz_agent'
+ORDER BY tc.table_name, tc.constraint_name,
+         kcu.ordinal_position;
+		 
+		 [{
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "session_id",
+  "parent_table": "agent_sessions_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_session_id_fkey"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_messages_biz_agent_user_id_fkey"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_reports_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "child_column": "generated_by",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_reports_biz_agent_generated_by_fkey"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_sessions_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_sessions_biz_agent_user_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_business_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "message_id",
+  "parent_table": "agent_messages_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_message_id_fkey"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "child_column": "session_id",
+  "parent_table": "agent_sessions_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "agent_tool_logs_biz_agent_session_id_fkey"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "audit_logs_biz_agent_business_id_fkey"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "child_column": "user_id",
+  "parent_table": "auth_users_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "audit_logs_biz_agent_user_id_fkey"
+}, {
+  "child_table": "auth_roles_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_roles_biz_agent_business_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "role_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "child_column": "role_id",
+  "parent_table": "auth_roles_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey"
+}, {
+  "child_table": "cat_categories_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "cat_categories_biz_agent_business_id_fkey"
+}, {
+  "child_table": "cust_customers_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "cust_customers_biz_agent_business_id_fkey"
+}, {
+  "child_table": "fin_expenses_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "fin_expenses_biz_agent_business_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "category_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "category_id",
+  "parent_table": "cat_categories_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "prod_products_biz_agent_business_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "purchase_order_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "purchase_order_id",
+  "parent_table": "purch_purchase_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "vendor_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "child_column": "vendor_id",
+  "parent_table": "vend_vendors_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "child_column": "product_id",
+  "parent_table": "prod_products_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "customer_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "customer_id",
+  "parent_table": "cust_customers_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_orders_biz_agent_business_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "order_id",
+  "parent_table": "sales_orders_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "payment_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "child_column": "payment_id",
+  "parent_table": "sales_payments_biz_agent",
+  "parent_column": "business_id",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey"
+}, {
+  "child_table": "vend_vendors_biz_agent",
+  "child_column": "business_id",
+  "parent_table": "biz_businesses_biz_agent",
+  "parent_column": "id",
+  "constraint_name": "vend_vendors_biz_agent_business_id_fkey"
+}]
+
+===========================================================================================================================
+Foreign-key review
+Relationships detected
+Relationship	Finding
+Users → Businesses	Present
+Users → Roles	Composite relationship present
+Products → Categories	Composite relationship present
+Orders → Customers	Composite relationship present
+Order items → Orders	Composite relationship present
+Payments → Orders	Composite relationship present
+Refunds → Orders	Composite relationship present
+Refunds → Payments	Composite relationship present
+Inventory → Products	Composite relationship present
+Purchase items → Purchase orders	Composite relationship present
+AI messages → Sessions	Present
+AI tool logs → Sessions and messages	Present
+===========================================================================================================================
+Inspect complete foreign-key definitions
+
+SELECT
+    conrelid::regclass AS child_table,
+    conname AS constraint_name,
+    pg_get_constraintdef(oid) AS constraint_definition
+FROM pg_constraint
+WHERE contype = 'f'
+  AND connamespace = 'public'::regnamespace
+ORDER BY conrelid::regclass::text, conname;
+
+[{
+  "child_table": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_session_id_fkey",
+  "constraint_definition": "FOREIGN KEY (session_id) REFERENCES agent_sessions_biz_agent(id)"
+}, {
+  "child_table": "agent_messages_biz_agent",
+  "constraint_name": "agent_messages_biz_agent_user_id_fkey",
+  "constraint_definition": "FOREIGN KEY (user_id) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "constraint_name": "agent_reports_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "agent_reports_biz_agent",
+  "constraint_name": "agent_reports_biz_agent_generated_by_fkey",
+  "constraint_definition": "FOREIGN KEY (generated_by) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "agent_sessions_biz_agent",
+  "constraint_name": "agent_sessions_biz_agent_user_id_fkey",
+  "constraint_definition": "FOREIGN KEY (user_id) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "constraint_name": "agent_tool_logs_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "constraint_name": "agent_tool_logs_biz_agent_message_id_fkey",
+  "constraint_definition": "FOREIGN KEY (message_id) REFERENCES agent_messages_biz_agent(id)"
+}, {
+  "child_table": "agent_tool_logs_biz_agent",
+  "constraint_name": "agent_tool_logs_biz_agent_session_id_fkey",
+  "constraint_definition": "FOREIGN KEY (session_id) REFERENCES agent_sessions_biz_agent(id)"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "constraint_name": "audit_logs_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "audit_logs_biz_agent",
+  "constraint_name": "audit_logs_biz_agent_user_id_fkey",
+  "constraint_definition": "FOREIGN KEY (user_id) REFERENCES auth_users_biz_agent(id)"
+}, {
+  "child_table": "auth_roles_biz_agent",
+  "constraint_name": "auth_roles_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "constraint_name": "auth_users_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "auth_users_biz_agent",
+  "constraint_name": "auth_users_biz_agent_business_id_role_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, role_id) REFERENCES auth_roles_biz_agent(business_id, id)"
+}, {
+  "child_table": "cat_categories_biz_agent",
+  "constraint_name": "cat_categories_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "cust_customers_biz_agent",
+  "constraint_name": "cust_customers_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "fin_expenses_biz_agent",
+  "constraint_name": "fin_expenses_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "inv_inventory_biz_agent",
+  "constraint_name": "inv_inventory_biz_agent_business_id_product_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, product_id) REFERENCES prod_products_biz_agent(business_id, id)"
+}, {
+  "child_table": "inv_stock_movements_biz_agent",
+  "constraint_name": "inv_stock_movements_biz_agent_business_id_product_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, product_id) REFERENCES prod_products_biz_agent(business_id, id)"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "constraint_name": "prod_products_biz_agent_business_id_category_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, category_id) REFERENCES cat_categories_biz_agent(business_id, id)"
+}, {
+  "child_table": "prod_products_biz_agent",
+  "constraint_name": "prod_products_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "constraint_name": "purch_purchase_items_biz_agen_business_id_purchase_order_i_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, purchase_order_id) REFERENCES purch_purchase_orders_biz_agent(business_id, id)"
+}, {
+  "child_table": "purch_purchase_items_biz_agent",
+  "constraint_name": "purch_purchase_items_biz_agent_business_id_product_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, product_id) REFERENCES prod_products_biz_agent(business_id, id)"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "purch_purchase_orders_biz_agent",
+  "constraint_name": "purch_purchase_orders_biz_agent_business_id_vendor_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, vendor_id) REFERENCES vend_vendors_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "constraint_name": "sales_order_items_biz_agent_business_id_order_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, order_id) REFERENCES sales_orders_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_order_items_biz_agent",
+  "constraint_name": "sales_order_items_biz_agent_business_id_product_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, product_id) REFERENCES prod_products_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "constraint_name": "sales_orders_biz_agent_business_id_customer_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, customer_id) REFERENCES cust_customers_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_orders_biz_agent",
+  "constraint_name": "sales_orders_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}, {
+  "child_table": "sales_payments_biz_agent",
+  "constraint_name": "sales_payments_biz_agent_business_id_order_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, order_id) REFERENCES sales_orders_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "constraint_name": "sales_refunds_biz_agent_business_id_order_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, order_id) REFERENCES sales_orders_biz_agent(business_id, id)"
+}, {
+  "child_table": "sales_refunds_biz_agent",
+  "constraint_name": "sales_refunds_biz_agent_business_id_payment_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id, payment_id) REFERENCES sales_payments_biz_agent(business_id, id)"
+}, {
+  "child_table": "vend_vendors_biz_agent",
+  "constraint_name": "vend_vendors_biz_agent_business_id_fkey",
+  "constraint_definition": "FOREIGN KEY (business_id) REFERENCES biz_businesses_biz_agent(id)"
+}]
+
+===========================================================================================================================
+Validation findings
+1. Correctly implemented relationships
+Module	Relationship	Result
+Authentication	User → Business	OK
+Authentication	User → Business-specific Role	OK
+Products	Product → Category within same business	OK
+Sales	Order → Customer within same business	OK
+Sales	Order item → Order and Product	OK
+Payments	Payment → Order	OK
+Refunds	Refund → Order and Payment	OK
+Inventory	Inventory → Product within same business	OK
+Purchases	Purchase order → Vendor	OK
+Purchases	Purchase item → Order and Product	OK
+AI Agent	Messages → Sessions	OK
+AI Agent	Tool logs → Sessions and Messages	OK
+===========================================================================================================================
+SELECT
+    'Products without valid categories' AS validation,
+    COUNT(*) AS invalid_records
+FROM prod_products_biz_agent p
+LEFT JOIN cat_categories_biz_agent c
+    ON c.business_id = p.business_id
+   AND c.id = p.category_id
+WHERE c.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Orders without valid customers',
+    COUNT(*)
+FROM sales_orders_biz_agent o
+LEFT JOIN cust_customers_biz_agent c
+    ON c.business_id = o.business_id
+   AND c.id = o.customer_id
+WHERE c.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Order items without valid products',
+    COUNT(*)
+FROM sales_order_items_biz_agent oi
+LEFT JOIN prod_products_biz_agent p
+    ON p.business_id = oi.business_id
+   AND p.id = oi.product_id
+WHERE p.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Purchase items without valid products',
+    COUNT(*)
+FROM purch_purchase_items_biz_agent pi
+LEFT JOIN prod_products_biz_agent p
+    ON p.business_id = pi.business_id
+   AND p.id = pi.product_id
+WHERE p.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Inventory without valid products',
+    COUNT(*)
+FROM inv_inventory_biz_agent i
+LEFT JOIN prod_products_biz_agent p
+    ON p.business_id = i.business_id
+   AND p.id = i.product_id
+WHERE p.id IS NULL;
+
+
+[{
+  "validation": "Products without valid categories",
+  "invalid_records": 0
+}, {
+  "validation": "Orders without valid customers",
+  "invalid_records": 0
+}, {
+  "validation": "Order items without valid products",
+  "invalid_records": 0
+}, {
+  "validation": "Purchase items without valid products",
+  "invalid_records": 0
+}, {
+  "validation": "Inventory without valid products",
+  "invalid_records": 0
+}]
+
+===========================================================================================================================
+All five checks returned 0 invalid records. This confirms that:
+- Every product is linked to a valid category.
+- Every sales order is linked to a valid customer.
+- Every sales order item references a valid product.
+- Every purchase item references a valid product.
+- Every inventory record references a valid product.
+
+===========================================================================================================================
+Validate payments and refunds
+
+SELECT
+    'Payments without valid sales orders' AS validation,
+    COUNT(*) AS invalid_records
+FROM sales_payments_biz_agent p
+LEFT JOIN sales_orders_biz_agent o
+    ON o.business_id = p.business_id
+   AND o.id = p.order_id
+WHERE o.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Refunds without valid sales orders',
+    COUNT(*)
+FROM sales_refunds_biz_agent r
+LEFT JOIN sales_orders_biz_agent o
+    ON o.business_id = r.business_id
+   AND o.id = r.order_id
+WHERE o.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Refunds without valid payments',
+    COUNT(*)
+FROM sales_refunds_biz_agent r
+LEFT JOIN sales_payments_biz_agent p
+    ON p.business_id = r.business_id
+   AND p.id = r.payment_id
+WHERE p.id IS NULL;
+
+[{
+  "validation": "Payments without valid sales orders",
+  "invalid_records": 0
+}, {
+  "validation": "Refunds without valid sales orders",
+  "invalid_records": 0
+}, {
+  "validation": "Refunds without valid payments",
+  "invalid_records": 0
+}]
+
+===========================================================================================================================
+
+Validate purchase orders and vendors
+SELECT
+    'Purchase orders without valid vendors' AS validation,
+    COUNT(*) AS invalid_records
+FROM purch_purchase_orders_biz_agent po
+LEFT JOIN vend_vendors_biz_agent v
+    ON v.business_id = po.business_id
+   AND v.id = po.vendor_id
+WHERE v.id IS NULL
+
+UNION ALL
+
+SELECT
+    'Purchase items without valid purchase orders',
+    COUNT(*)
+FROM purch_purchase_items_biz_agent pi
+LEFT JOIN purch_purchase_orders_biz_agent po
+    ON po.business_id = pi.business_id
+   AND po.id = pi.purchase_order_id
+WHERE po.id IS NULL;
+
+[{
+  "validation": "Purchase orders without valid vendors",
+  "invalid_records": 0
+}, {
+  "validation": "Purchase items without valid purchase orders",
+  "invalid_records": 0
+}]
+
+===========================================================================================================================
+Validate stock movements
+SELECT
+    'Stock movements without valid products' AS validation,
+    COUNT(*) AS invalid_records
+FROM inv_stock_movements_biz_agent sm
+LEFT JOIN prod_products_biz_agent p
+    ON p.business_id = sm.business_id
+   AND p.id = sm.product_id
+WHERE p.id IS NULL;
+
+[{
+  "validation": "Stock movements without valid products",
+  "invalid_records": 0
+}]
+
+===========================================================================================================================
+Validate expenses
+SELECT
+    'Expenses with missing business_id' AS validation,
+    COUNT(*) AS invalid_records
+FROM fin_expenses_biz_agent
+WHERE business_id IS NULL
+
+UNION ALL
+
+SELECT
+    'Expenses with invalid amounts',
+    COUNT(*)
+FROM fin_expenses_biz_agent
+WHERE amount IS NULL
+   OR amount <= 0
+
+UNION ALL
+
+SELECT
+    'Expenses with missing categories',
+    COUNT(*)
+FROM fin_expenses_biz_agent
+WHERE expense_category IS NULL
+   OR TRIM(expense_category) = ''
+
+UNION ALL
+
+SELECT
+    'Expenses with missing dates',
+    COUNT(*)
+FROM fin_expenses_biz_agent
+WHERE expense_date IS NULL;
+
+[{
+  "validation": "Expenses with missing business_id",
+  "invalid_records": 0
+}, {
+  "validation": "Expenses with invalid amounts",
+  "invalid_records": 0
+}, {
+  "validation": "Expenses with missing categories",
+  "invalid_records": 0
+}, {
+  "validation": "Expenses with missing dates",
+  "invalid_records": 0
+}]
+
+===========================================================================================================================
+Final database verification
+Let's verify the record counts across all 21 tables in one query.
+
+SELECT 'biz_businesses_biz_agent' AS table_name, COUNT(*) AS total_records FROM biz_businesses_biz_agent
+UNION ALL SELECT 'auth_users_biz_agent', COUNT(*) FROM auth_users_biz_agent
+UNION ALL SELECT 'auth_roles_biz_agent', COUNT(*) FROM auth_roles_biz_agent
+UNION ALL SELECT 'cat_categories_biz_agent', COUNT(*) FROM cat_categories_biz_agent
+UNION ALL SELECT 'prod_products_biz_agent', COUNT(*) FROM prod_products_biz_agent
+UNION ALL SELECT 'cust_customers_biz_agent', COUNT(*) FROM cust_customers_biz_agent
+UNION ALL SELECT 'sales_orders_biz_agent', COUNT(*) FROM sales_orders_biz_agent
+UNION ALL SELECT 'sales_order_items_biz_agent', COUNT(*) FROM sales_order_items_biz_agent
+UNION ALL SELECT 'vend_vendors_biz_agent', COUNT(*) FROM vend_vendors_biz_agent
+UNION ALL SELECT 'purch_purchase_orders_biz_agent', COUNT(*) FROM purch_purchase_orders_biz_agent
+UNION ALL SELECT 'purch_purchase_items_biz_agent', COUNT(*) FROM purch_purchase_items_biz_agent
+UNION ALL SELECT 'inv_inventory_biz_agent', COUNT(*) FROM inv_inventory_biz_agent
+UNION ALL SELECT 'inv_stock_movements_biz_agent', COUNT(*) FROM inv_stock_movements_biz_agent
+UNION ALL SELECT 'fin_expenses_biz_agent', COUNT(*) FROM fin_expenses_biz_agent
+UNION ALL SELECT 'agent_sessions_biz_agent', COUNT(*) FROM agent_sessions_biz_agent
+UNION ALL SELECT 'agent_messages_biz_agent', COUNT(*) FROM agent_messages_biz_agent
+UNION ALL SELECT 'agent_tool_logs_biz_agent', COUNT(*) FROM agent_tool_logs_biz_agent
+UNION ALL SELECT 'agent_reports_biz_agent', COUNT(*) FROM agent_reports_biz_agent
+UNION ALL SELECT 'audit_logs_biz_agent', COUNT(*) FROM audit_logs_biz_agent
+UNION ALL SELECT 'sales_payments_biz_agent', COUNT(*) FROM sales_payments_biz_agent
+UNION ALL SELECT 'sales_refunds_biz_agent', COUNT(*) FROM sales_refunds_biz_agent
+ORDER BY table_name;
+
+
+[{
+  "table_name": "agent_messages_biz_agent",
+  "total_records": 0
+}, {
+  "table_name": "agent_reports_biz_agent",
+  "total_records": 0
+}, {
+  "table_name": "agent_sessions_biz_agent",
+  "total_records": 0
+}, {
+  "table_name": "agent_tool_logs_biz_agent",
+  "total_records": 0
+}, {
+  "table_name": "audit_logs_biz_agent",
+  "total_records": 0
+}, {
+  "table_name": "auth_roles_biz_agent",
+  "total_records": 3
+}, {
+  "table_name": "auth_users_biz_agent",
+  "total_records": 4
+}, {
+  "table_name": "biz_businesses_biz_agent",
+  "total_records": 1
+}, {
+  "table_name": "cat_categories_biz_agent",
+  "total_records": 8
+}, {
+  "table_name": "cust_customers_biz_agent",
+  "total_records": 200
+}, {
+  "table_name": "fin_expenses_biz_agent",
+  "total_records": 60
+}, {
+  "table_name": "inv_inventory_biz_agent",
+  "total_records": 50
+}, {
+  "table_name": "inv_stock_movements_biz_agent",
+  "total_records": 520
+}, {
+  "table_name": "prod_products_biz_agent",
+  "total_records": 50
+}, {
+  "table_name": "purch_purchase_items_biz_agent",
+  "total_records": 250
+}, {
+  "table_name": "purch_purchase_orders_biz_agent",
+  "total_records": 100
+}, {
+  "table_name": "sales_order_items_biz_agent",
+  "total_records": 3000
+}, {
+  "table_name": "sales_orders_biz_agent",
+  "total_records": 1500
+}, {
+  "table_name": "sales_payments_biz_agent",
+  "total_records": 1425
+}, {
+  "table_name": "sales_refunds_biz_agent",
+  "total_records": 30
+}, {
+  "table_name": "vend_vendors_biz_agent",
+  "total_records": 15
+}]
+
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================
+===========================================================================================================================

@@ -1,0 +1,1038 @@
+RAG (Retrieval-Augmented Generation) module.
+
+RAG module – Development roadmap
+Feature	Purpose
+1. Knowledge Dashboard	View total documents and knowledge chunks
+2. Upload Documents	Upload PDF, DOCX and TXT files
+3. Document Processing	Extract text, split into chunks and generate embeddings
+4. Knowledge Listing	View uploaded documents and processing status
+5. Document Search	Search knowledge using semantic similarity
+6. AI Question & Answer	Ask questions using uploaded business knowledge
+7. Source References	Show which documents support each answer
+8. Delete Documents	Remove documents and associated embeddings
+
+Proposed architecture
+React RAG Knowledge UI
+
+Upload · Search · Ask · View Sources
+Express RAG APIs
+Document processing · Retrieval · Answers
+Neon PostgreSQL
+pgvector · Knowledge chunks
+Gemini
+Embeddings · Answer generation
+
+Step 1 – Inspect existing RAG backend
+
+frontend/
+└── src/
+    ├── api/
+    │   └── knowledgeApi.ts
+    │
+    ├── pages/
+    │   └── knowledge/
+    │       └── Knowledge.tsx
+    │
+    └── ...
+	
+	we'll test the complete RAG workflow:
+1. Upload a sample business document.
+2. Generate and store its embeddings in NeonDB.
+3. Ask a question related to that document.
+4. Verify the AI answer and retrieved document sources.
+5. Ask an unrelated question to verify that RAG does not invent answers.
+
+-----------------------------------
+Let's test document ingestion
+We'll use a small sample document for your Demo Electronics Store.
+
+Document Name:
+
+Product Warranty Policy
+
+Document Content:
+Product Warranty Policy – Demo Electronics Store
+1. All Samsung smartphones come with a 1-year manufacturer warranty.
+2. Dell laptops come with a 2-year manufacturer warranty.
+3. Logitech accessories come with a 1-year warranty.
+4. Warranty covers manufacturing defects and hardware failures.
+5. Physical damage, water damage, and accidental damage are not covered under warranty.
+6. Customers must provide the original purchase invoice to claim warranty.
+7. Warranty claims can be initiated by contacting the customer support team.
+8. Replacement or repair is subject to manufacturer warranty terms and conditions.
+
+------------------------
+After uploading the document, open NeonDB SQL Editor and execute the following queries.
+1. Check uploaded document chunks
+SELECT
+    id,
+    business_id,
+    document_name,
+    chunk_index,
+    LEFT(chunk_content, 200) AS content_preview,
+    created_at
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Product Warranty Policy'
+ORDER BY chunk_index;
+
+[{
+  "id": "6ea20648-9b91-43db-aae9-d53419f70377",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "content_preview": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-year manufacturer warranty. 3. Logitech accessories ",
+  "created_at": "2026-11-15 08:03:14.27991+00"
+}]
+
+
+2. Count total chunks
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Product Warranty Policy'
+GROUP BY document_name;
+
+[{
+  "document_name": "Product Warranty Policy",
+  "total_chunks": 1
+}]
+
+
+
+3. Verify embeddings
+SELECT
+    document_name,
+    chunk_index,
+    vector_dims(embedding) AS embedding_dimensions
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Product Warranty Policy';
+
+[{
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "embedding_dimensions": 768
+}]
+
+
+Expected embedding dimension:
+768 dimensions
+4. Check all uploaded knowledge documents
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks,
+    MIN(created_at) AS uploaded_at
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+GROUP BY document_name
+ORDER BY uploaded_at DESC;
+
+
+[{
+  "document_name": "Product Warranty Policy",
+  "total_chunks": 1,
+  "uploaded_at": "2026-11-15 08:03:14.27991+00"
+}, {
+  "document_name": "Electronics Store Warranty Policy",
+  "total_chunks": 1,
+  "uploaded_at": "2026-11-14 09:14:07.985411+00"
+}]
+
+------------------------
+
+
+Enter this document in the upload section.
+
+Before clicking Upload Document: This will generate Gemini embeddings and store the chunks in NeonDB, consuming embedding quota.
+
+Once you upload it, share the success message or screenshot. Then we'll test RAG search with questions such as:
+- What is the warranty period for Dell laptops?
+- Are accidental damages covered?
+- What is required to claim a warranty?
+
+------------------------
+
+Excellent! All four database checks are successful. Your document has been ingested correctly, and the embedding is stored in NeonDB.
+RAG Document Ingestion Verified
+1. Database verification results
+Check	Result	Status
+Document inserted	Product Warranty Policy	Pass
+Chunk count	1	Pass
+Embedding dimensions	768	Pass
+Business ID mapping	Correct	Pass
+Existing document	Electronics Store Warranty Policy	Found
+
+2. Why only one chunk?
+Your document contains approximately 615 characters.
+
+Your backend configuration uses:
+- Chunk size: 1,000 characters
+- Chunk overlap: 150 characters
+Since the document is smaller than 1,000 characters, it correctly produces just one chunk.
+3. Next: Test RAG search
+Open:
+
+http://localhost:5173/knowledge
+
+Enter this question in Ask Your Business Knowledge:
+Question 1
+
+What is the warranty period for Dell laptops?
+ Copy question
+Expected answer: Dell laptops come with a 2-year manufacturer warranty.
+
+The answer should also show the source document: Product Warranty Policy.
+
+This search will generate a query embedding and, if relevant chunks are found, call Gemini to generate the answer.
+-----------------
+AI Answer
+Based on the provided documents, the warranty period for Dell laptops depends on the specific policy:
+
+* According to the **Electronics Store Warranty Policy (Source 1)**, Dell laptops carry a **1-year** manufacturer warranty.
+* According to the **Product Warranty Policy – Demo Electronics Store (Source 2)**, Dell laptops come with a **2-year** manufacturer warranty.
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 71.02%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 67.95%
+-----------------
+Excellent! Your first RAG search is working successfully. However, we have discovered an important issue that is worth investigating.
+
+RAG Search API – Working
+ Conflicting policy data detected
+
+1. What happened?
+You asked:
+
+What is the warranty period for Dell laptops?
+
+Your AI returned two different answers:
+Source document	Dell laptop warranty
+Electronics Store Warranty Policy	1 year
+Product Warranty Policy	2 years
+
+Both documents were retrieved successfully.
+2. Retrieval verification
+Document	Similarity
+Electronics Store Warranty Policy	71.02%
+Product Warranty Policy	67.95%
+
+This confirms:
+- Query embedding was generated.
+- PostgreSQL vector search retrieved relevant chunks.
+- Both source documents were passed to Gemini.
+- Gemini generated an answer using the retrieved context.
+3. Important business issue
+Your knowledge base contains conflicting warranty policies.
+
+The AI is correctly reporting both policies rather than silently choosing one.
+
+For a real business assistant, we should eventually introduce document versioning or policy priority so outdated policies don't mislead users.
+
+--------------------
+4. Next test: Negative question
+Let's check whether your RAG system avoids inventing answers.
+
+Ask this question:
+Question 2
+
+What is the warranty period for Apple iPhones?
+ Copy question
+Your uploaded documents mention Samsung smartphones and Dell laptops, but not Apple iPhones.
+
+Expected behaviour: The AI should clearly say that the available documents do not specify an Apple iPhone warranty period.
+
+------------
+AI Answer
+The provided business knowledge does not contain information about the warranty period for Apple iPhones.
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 65.42%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 64.40%
+--------------------------
+Excellent! This is a very important successful test of your RAG implementation.
+Negative RAG Test – Passed
+1. Test result
+Question: What is the warranty period for Apple iPhones?
+
+AI Answer:
+
+"The provided business knowledge does not contain information about the warranty period for Apple iPhones."
+
+This is exactly the behaviour we wanted.
+2. What have we verified?
+RAG capability	Result
+Document ingestion	Pass
+Gemini embeddings	Pass
+PostgreSQL vector search	Pass
+Relevant source retrieval	Pass
+Grounded AI response	Pass
+Unknown information handling	Pass
+Source attribution	Pass
+
+3. One interesting observation
+Even though Apple iPhones aren't mentioned in either document, the vector search retrieved both documents:
+- Electronics Store Warranty Policy – 65.42%
+- Product Warranty Policy – 64.40%
+Gemini correctly understood that these documents don't contain the requested information.
+
+This demonstrates an important RAG principle:
+
+Retrieving relevant-looking documents does not mean the answer is necessarily present in those documents.
+4. What should we improve next?
+I recommend three enhancements:
+1. Similarity threshold: Avoid passing irrelevant chunks to Gemini. For example, consider a configurable minimum similarity threshold, validated against your actual queries.
+2. Document management: Display uploaded documents, chunk counts and upload dates.
+3. Policy conflict detection: Identify when two documents contain conflicting business information.
+My recommendation is to implement Document Management next, so the Admin can see and manage the knowledge base.
+
+Your basic RAG ingestion and question-answering workflow is now working successfully!
+
+----------------
+Currently, your AI Business Assistant Agent supports text-based document upload only. The user enters or pastes content into the Document Content text area.
+
+It does not yet support selecting PDF, TXT, DOC or DOCX files directly.
+
+However, we can extend it to support all these formats.
+Proposed document upload support
+Supported document formats
+PDF
+
+Extract text from PDF documents
+
+TXT
+
+Read plain text files
+
+DOC
+
+Extract text from legacy Word documents
+
+DOCX
+
+Extract text from modern Word documents
+
+
+
+How the architecture will work
+React Frontend
+
+Select PDF / TXT / DOC / DOCX
+
+Express Backend
+
+Receive file using Multer
+
+Text Extraction
+
+PDF / DOC / DOCX / TXT parsers
+
+Existing RAG Ingestion
+
+Chunking → Gemini Embeddings → NeonDB
+
+AI Knowledge Base
+
+Ready for semantic search and question answering
+
+
+Technologies we can use
+Purpose	Library
+File upload	Multer
+PDF extraction	pdf-parse
+DOCX extraction	mammoth
+DOC extraction	antiword or LibreOffice-based conversion
+TXT extraction	Node.js file system
+
+We should validate file type, file size, and extracted text. Scanned PDFs will need OCR support separately.
+My recommendation
+Let's implement this incrementally:
+1. TXT upload.
+2. PDF upload.
+3. DOCX upload.
+4. DOC upload.
+5. File validation and error handling.
+We'll reuse your existing ingestDocument() service, so there is no need to redesign the working RAG pipeline.
+
+One question before we start: What maximum document size would you prefer?
+- 5 MB
+- 10 MB
+- 20 MB
+I recommend 10 MB for the first version.
+--------------------------
+Absolutely! That's a sensible decision. Let's retain text-only document ingestion for now.
+
+Your existing implementation is already working successfully:
+- Text entry through the Knowledge page.
+- Automatic text chunking.
+- Gemini embedding generation.
+- Vector storage in NeonDB.
+- Semantic similarity search.
+- AI-generated answers with source references.
+- Handling questions when information is unavailable.
+We won't introduce Multer, PDF parsers or DOCX libraries.
+
+Next, let's focus on improving the existing RAG Knowledge Management, particularly document listing, duplicate handling and deletion.
+--------------------------
+reat! Let's enhance the existing RAG Knowledge Management without disturbing the working ingestion and search functionality.
+
+We'll implement three features:
+1. Document Listing – Display uploaded document names, chunk counts and upload dates.
+2. Duplicate Handling – Prevent accidental re-upload of a document with the same name.
+3. Document Deletion – Allow Admin to remove a document and all its associated chunks from NeonDB.
+Implementation order
+1. Backend document listing API
+2. Frontend document listing UI
+3. Duplicate document validation
+4. Delete document API and UI
+--------------------------
+Test duplicate document prevention
+Let's verify this without consuming additional Gemini quota.
+1. Restart your backend if required.
+2. Open http://localhost:5173/knowledge.
+3. Enter the existing document name:
+Product Warranty Policy
+4. Enter any non-empty test content.
+5. Click Upload Document.
+Expected API response
+HTTP 409 Conflict
+{
+  "success": false,
+  "message": "A document with this name already exists."
+}
+----------------
+Excellent! Duplicate document prevention is working exactly as expected. Test passed
+
+
+Your screenshot confirms that the frontend displays:
+
+"A document with this name already exists."
+What we have verified
+1. Duplicate document name detected.
+2. Backend returned HTTP 409 Conflict.
+3. Frontend displayed the correct error toast.
+4. Existing document remains unchanged.
+5. Duplicate upload was rejected before Gemini embedding generation.
+Your duplicate prevention is complete.
+Next: Document deletion
+Now let's implement a Delete action beside each document in the Knowledge Documents table.
+
+Expected behaviour:
+- Admin clicks Delete.
+- Confirmation message appears.
+- Backend deletes all chunks belonging to that document and business.
+- Document disappears from the list.
+- Existing documents remain unaffected.
+--------------------
+
+Test document deletion through Postman
+Before connecting the frontend, let's verify the backend API.
+
+Request
+DELETE http://localhost:5000/api/knowledge/documents/Test%20Delete%20Document
+
+
+Use the existing authentication cookie. The test document must exist before this request; don't use either of your warranty documents.
+
+Expected successful response:
+{
+  "success": true,
+  "message": "Knowledge document deleted successfully",
+  "deletedChunks": 1
+}
+
+
+Expected if the document doesn't exist: HTTP 404.
+
+
+const Knowledge = () => {
+  // 1. State declarations
+  const [documents, setDocuments] = useState<KnowledgeDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+
+  // 2. Other state declarations
+  // ...
+
+  // 3. Regular functions
+  const loadKnowledgeDocuments = async () => {
+    try {
+      setLoadingDocuments(true);
+      const response = await getKnowledgeDocumentsApi();
+      setDocuments(response.data);
+    } catch {
+      showErrorToast("Unable to load knowledge documents.");
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  // 4. Event handlers
+  const handleDeleteDocument = async (documentName: string) => {
+    // Your existing deletion logic
+  };
+
+  // 5. useEffect
+  useEffect(() => {
+    void loadKnowledgeDocuments();
+  }, []);
+
+  // 6. Return JSX
+  return (
+    // ...
+  );
+};
+
+
+Verify document deletion in Chrome
+Open:
+
+http://localhost:5173/knowledge
+
+Scroll down to Knowledge Documents.
+
+You should now see a Delete button beside each document.
+
+Please verify:
+1. Delete buttons are visible.
+2. Click Delete on a document.
+3. Browser confirmation dialog appears.
+4. Click Cancel first and confirm the document remains.
+5. Then we can test actual deletion using a separate test document.
+
+
+SELECT
+    id,
+    business_id,
+    document_name,
+    chunk_index,
+    LEFT(chunk_content, 200) AS content_preview,
+    vector_dims(embedding) AS embedding_dimensions,
+    created_at
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Test Policy'
+ORDER BY chunk_index;
+
+[{
+  "id": "1939e85e-8072-44ea-8ac9-16e6b81a3b26",
+  "business_id": "deb3affe-4468-4c75-9125-187376f1b0f9",
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "content_preview": "RAG Knowledge Base Upload business documents and build your AI knowledge base. Upload Knowledge Document Add business information to your knowledge base. Document Name",
+  "embedding_dimensions": 768,
+  "created_at": "2026-11-15 08:43:14.53759+00"
+}]
+
+
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Test Policy'
+GROUP BY document_name;
+
+[{
+  "document_name": "Test Policy",
+  "total_chunks": 1
+}]
+
+
+SELECT
+    document_name,
+    COUNT(*) AS total_chunks,
+    MIN(created_at) AS uploaded_at
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+GROUP BY document_name
+ORDER BY uploaded_at DESC;
+
+[{
+  "document_name": "Test Policy",
+  "total_chunks": 1,
+  "uploaded_at": "2026-11-15 08:43:14.53759+00"
+}, {
+  "document_name": "Product Warranty Policy",
+  "total_chunks": 1,
+  "uploaded_at": "2026-11-15 08:03:14.27991+00"
+}, {
+  "document_name": "Electronics Store Warranty Policy",
+  "total_chunks": 1,
+  "uploaded_at": "2026-11-14 09:14:07.985411+00"
+}]
+
+
+EMBEDDINGS QUERY:
+=================
+You can view the actual embedding values directly in NeonDB.
+1. Display the embedding vector
+Execute this SQL query:
+SELECT
+    document_name,
+    chunk_index,
+    embedding
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name = 'Test Policy';
+  
+  ---------
+  [{
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "embedding": "[0.004693975,0.014931158,0.025808064,-0.052045494,-0.016548747,0.0018640001,0.014568206,0.010061619,-0.0036514446,-0.006327253,-0.017434752,-0.04290533,0.0076565095,-0.00066506374,0.1471085,-0.004107795,-0.0013711576,0.029396195,-0.0010132461,-0.02728294,-0.001795119,-0.0069846623,-0.015537267,-0.0021782476,0.004720444,-0.024770612,0.026288655,0.004872792,0.010725166,-0.0046518557,0.0029595727,-0.015925944,0.008666501,0.0026926056,0.022990093,0.023645427,0.009380989,-0.012557725,-0.0010606012,0.013588643,-0.013960711,-0.0035138063,-0.013067784,-0.013139673,-0.019167164,-0.0019740323,-0.017374737,-0.032211132,-0.015239504,0.04205538,0.0009288891,-0.0066397325,-0.006726137,-0.16671233,0.040176492,-0.017274536,0.018280722,-0.013687549,0.019479673,0.030028883,0.0038704688,0.028361335,-0.012926388,-0.012292422,-0.024864798,-0.008653537,0.0023012343,-0.0071972464,-0.016463978,-0.020431532,-0.01282392,-0.025757236,-0.002154852,-0.005259458,-0.0111626135,-0.050372813,0.038871713,-0.0068039633,-0.008340009,0.0080906795,-0.016853485,-0.029825643,-0.0036241782,-0.03903511,0.007327726,0.0022859005,0.0066856053,0.0049658827,-0.004151287,-0.019771969,-0.016674884,0.009676714,0.03851098,-0.032090638,0.015407196,0.0015491059,0.013138815,-0.01599013,0.001055184,-0.015287969,-0.0069979858,-0.027647624,-0.03750107,-0.015756736,0.025920115,0.0007836308,-0.00351352,0.0046651186,0.010075099,0.045540802,0.014353898,0.0051726303,-0.008921575,0.012364929,0.007730034,-0.115384355,0.013457712,-0.00345778,0.0017083636,-0.014829119,-0.020554144,0.0147403125,0.00060115446,-0.0021744624,0.03208928,0.0068325195,-0.005057976,0.0004211261,-0.013733112,-0.0011912029,-0.0014742225,-0.0295684,0.008327314,-0.008211405,0.0056113824,0.023751743,-0.0013155362,-0.00049064856,0.010044162,-0.026833296,-0.0047180164,0.016577234,0.012666242,-0.0108236335,-0.008262995,-0.023573954,-0.022730904,0.009431148,0.005839866,-0.019546378,0.015785443,-0.020126024,-0.010690817,-0.003072555,0.01713982,-0.061013296,0.027959507,-0.0017160046,0.01537804,0.020517742,-0.018789575,0.0106548285,0.005243422,0.06290114,0.025020175,0.022686413,0.01195955,-0.020720946,-0.013307434,0.02025395,0.0015728669,-0.0025484732,0.005931989,0.012569104,0.016402388,-0.007208594,0.023607612,-0.008154935,0.019264,-0.033780906,-0.011724749,-0.001801694,-0.018636808,-0.012352735,-0.01860779,-0.01347356,0.009364746,-0.007289866,-0.0021258765,-0.022287617,-0.016031172,-0.014376807,0.005107365,-0.0032242595,0.009313819,-0.011303514,-0.02069479,0.008471643,0.0017499453,0.028609438,0.019800672,-0.0097519895,0.02245079,-0.016305918,0.030410718,0.008353483,-0.005437592,-0.018261874,0.03151381,-0.0049940147,0.012573132,-0.019762127,0.012412014,0.019140499,0.006480767,-0.03178712,-0.02052403,-0.009962208,-0.022455527,-0.018446246,0.011369861,-0.0059486623,0.018992042,-0.01212541,-0.0043267417,0.0031511579,-0.024054868,0.0055228556,0.007967335,-0.0009247325,-0.016450822,0.02082768,-0.005494741,0.010896105,0.006109608,-0.015798962,0.0070873513,-0.0047673387,0.011663373,0.009531515,-0.025589826,0.0036818022,-0.005310839,0.027777318,0.019113028,-0.011850181,0.0010233748,-0.004585829,0.0043162378,-0.008438657,-0.019174317,-0.015582841,0.005697454,-0.014738497,-0.03300049,0.0019139207,-0.013398802,0.020962354,0.009778833,-0.010598587,0.0040577385,-0.015331343,-0.016164267,-0.01861245,0.027129509,0.011272912,0.0149712255,0.0016096798,-0.0012349678,-0.014010378,0.021879701,-0.0055042515,-0.005132076,-0.0065743723,0.030171245,0.012878409,-0.044344135,3.5815046e-05,0.010347787,-0.026031615,-0.029147394,0.029312758,-0.017114958,-0.0147746755,-0.012579598,0.0020772559,-0.003899371,-0.012548968,0.023273323,0.023480752,0.015334771,0.0108619565,-0.0029095772,0.023299702,0.039475285,-0.017323593,0.00019764907,0.010086663,-0.0061831884,0.011063499,0.0022580435,-0.014637623,0.006953838,0.0353588,0.00066995295,0.00055290235,0.008189421,0.02148233,-0.011785719,-0.007927314,-0.0013510931,0.0012402579,-0.006503134,-0.03160795,-0.006640019,0.0034264908,-0.008233273,-0.0015488578,0.009319929,-0.02462871,0.008138156,0.0074254507,-0.002778481,0.005620468,-0.018024737,-0.050638296,0.0059925816,0.0394753,0.048889462,-0.005057577,0.0186159,-0.007197429,0.031581234,-0.010632097,-0.02690411,0.010294171,0.011334358,0.002739987,-0.0067936033,0.033898983,0.013682559,-0.027851645,-0.03348998,0.018671224,-0.008854024,0.0029992596,-0.017578678,-0.0076202475,-0.03915877,-0.02459319,-0.007016379,0.014760259,-0.007517501,-0.015792528,-0.027637083,0.012385991,-0.022351464,0.007870684,0.008685135,0.051057164,0.002823808,-0.014470815,0.014230497,0.019551326,0.003968727,0.0057365084,0.002356278,-0.0014821008,0.008650549,0.022771887,0.009699932,-0.024464492,0.017957304,-0.014784038,0.021135459,-0.008977445,0.005257053,-0.009298871,-0.019991279,0.0056066313,-0.013138685,0.02997983,-0.012081548,-0.03725455,-0.0023283157,0.0048353113,0.017249616,-0.018743508,3.2070955e-05,0.0224594,-0.016056648,-0.00070236734,-0.009421998,0.026487675,0.013395137,-0.0050792056,-0.0017598884,0.009544739,0.0023980218,-0.013206006,-0.025911344,0.003649583,-0.014281469,0.028709145,-0.004219663,0.010290659,-0.016186632,0.00085927424,-0.012808506,0.014943626,-0.016468437,-0.024657976,0.014664419,-0.008971291,0.010130851,0.0044712448,0.009599078,0.01543247,0.025317803,0.004253634,-0.01609709,0.01773309,0.012635192,-0.021517335,-0.04433866,-0.017120395,-0.037685215,-0.0005899309,0.029655993,-0.008412791,0.0088079125,-0.025689552,0.002255444,-0.0056992164,0.008084811,0.005392246,-0.0037130902,-0.020059241,0.013095131,-0.008470343,0.027424507,0.018157214,0.0016280098,-0.008909436,0.019589152,-0.009854725,-0.0003189327,-0.009724929,-0.021161675,0.013974764,0.011916153,-0.0027081457,-0.0005986048,-0.000113508424,-0.006436751,-0.005223966,-0.024794973,0.022474615,-0.018199418,-0.018055232,-0.0078121265,0.0052366117,0.008205581,0.018141828,-0.0035276113,-0.013213824,0.004037387,-0.011842356,0.023713225,0.033797357,0.0073513086,0.005799657,-0.008968645,-0.015930401,0.00016950732,0.0023536454,0.01775937,0.00847755,0.0032072605,0.005500682,0.020222528,-0.013750598,-0.00038236842,0.008215324,-0.015889661,0.023617234,0.010837177,-0.019256167,0.0045170523,-0.010349666,0.014691361,0.018584171,0.022393893,-0.0035058209,-0.010351729,-0.032014593,0.021762839,-0.046971757,-0.0126306275,-0.01351613,0.008154304,-0.003333557,-0.030513823,-0.013601717,-0.034156986,0.017258259,-0.021374991,0.009760389,0.0154407825,-0.002464644,-0.019506052,0.011896893,0.0076042768,0.030606875,0.012243983,0.012679076,-0.020484995,0.020435385,0.033352897,-0.013984163,-0.0029764725,0.03555167,0.000467475,-0.008016639,-0.0022833932,-0.004800162,0.0022009958,-0.0009210399,-0.02115138,-0.0005529531,-0.019610513,0.016597502,0.004243464,-0.032140344,0.00524354,-0.001742469,0.029198853,0.00929642,0.0054904283,0.036595426,-0.0034972788,-0.019569334,-0.010473756,-0.018530253,0.008206736,-0.08972701,0.031166723,-0.0034319211,-0.010379732,-0.03992232,-0.015342033,0.004961804,-0.020741658,-0.0039606956,-0.00587931,-0.0045807124,0.007134692,0.03335438,-0.0011603865,0.017260982,0.007609281,0.002054299,-0.03267275,0.017766327,0.010184209,0.009378856,-0.025773551,0.016424907,-0.0060922303,-0.0058666323,-0.024349852,0.001226647,-0.015760504,0.0060048713,0.043701548,-0.024390915,-0.0051534395,0.025184244,0.013506071,-0.017372627,0.018824017,0.02009107,-0.016811555,0.01051625,0.016666252,-0.015568153,-0.014990812,-0.012411707,-0.032864112,0.0037855422,-0.010952011,0.0031966595,-0.033870067,-0.00019356712,-0.009014866,-0.031487066,-0.041651327,-0.012754676,-0.005773311,-0.002866688,0.007920589,-0.020574275,0.022339106,-0.01637992,0.030903284,0.012278717,-0.022569915,0.0032389483,-0.002853431,-0.0025734468,0.025199797,0.017731832,0.02184252,-0.013729184,0.009375907,-0.00083542394,-0.017826056,0.024170596,0.033324476,-0.022145934,-0.008217337,-0.01520072,0.0341934,0.0041629765,-0.013899848,-0.009315963,0.019516192,-0.067343414,-0.040862534,-0.002496406,-0.010509163,0.03550476,0.01486147,0.010763561,-0.038404427,0.0027006534,-0.0069508157,0.02013987,-0.018107355,-0.020812985,-0.0016668618,0.013694931,0.007541414,0.020442516,-0.016904337,0.002237417,-0.013282814,-0.0018009514,-0.00039633684,0.0054548765,-0.008069,-0.043135624,-0.0048860875,-0.02686464,0.008061383,0.023877317,-0.012270292,-0.00095760566,-0.14468974,-0.0002731762,0.026453298,8.8230554e-05,0.0032298139,0.023690153,0.024852468,0.01170191,-0.0048072916,-0.041592445,0.002732982,-0.030906912,-0.013524878,-0.021994473,0.0293639,0.12977174,-0.012889261,-0.0053118467,-0.0036590323,-0.0136041455,-0.010792138,-0.018565139,-0.014663647,-0.025279177,-0.0125272125,0.0054668165,-0.00034008423,-0.01959373,-0.002272753,0.0019355406,0.01353331,-0.017510392,-0.0052105095,0.00081191864,0.030159501,-0.027513636,0.0061536687,-0.013790355,0.009984484,-0.017015383,0.0073398068,0.0058647958,0.0009576578,0.010062093,-0.0006421621,-0.0032282071,-0.00824179,-0.021576809,-0.0034385645,-0.0065138317,0.0111395,-0.06851139,-0.013173308,-0.0061446605,0.0070727947,0.015784845,0.00028533943,-0.015745519,0.031294875,-0.0025680743,0.020027027,-0.008934643,-0.008943522,0.022983389,0.0017337024,0.005114766,0.021331247,0.024605408,0.0045640697,0.024896706,0.0010602446,-0.008929559,-0.012807403,0.0022241704,-0.002344708,-0.004890522,-0.015669465,-0.001352507,0.0009851464,-0.0083711,0.014641858,-0.016023558,0.029969059,0.0070000715,-0.0027993883,0.019925572,0.00014267191,-0.021719854,0.01259875,0.016190108,0.009545127,0.03763694,-0.003310882,-0.0052742413,-0.0035319463,-0.017168056,-0.020984998,0.037627164,-0.0025183214,-0.00904773,0.0006167704,-0.00974951,0.004596772,-0.021802487,-0.030713856,-0.0012048981,0.028980438,0.002009403,0.008454242,-0.007913889]"
+}]
+-----------------------
+Excellent! This is the actual embedding generated for your Test Policy document and stored in NeonDB.
+
+Let's understand what you are looking at.
+1. Understanding your embedding
+Test Policy – Chunk 0
+Embedding dimensions
+768
+
+Stored chunks
+1
+
+
+
+Sample values from your actual embedding
+0.004693975
+0.014931158
+0.025808064
+-0.052045494
+-0.016548747
+0.0018640001
+0.014568206
+0.010061619
+
+
+
+2. What do these 768 numbers represent?
+Each number is one dimension of the vector representation generated by Gemini.
+- Positive values represent one direction along a dimension.
+- Negative values represent the opposite direction.
+- Values together encode semantic information about the text.
+- The complete vector represents the meaning of the text in a mathematical form.
+Importantly, an individual dimension does not have a simple human-readable meaning such as "warranty" or "product".
+3. How does RAG use this vector?
+Your existing code performs this operation:
+const queryEmbedding = await generateEmbedding(cleanQuestion);
+
+const results = await searchKnowledgeChunks(
+  businessId,
+  queryEmbedding,
+  5
+);
+
+
+And your SQL uses:
+1 - (embedding <=> $1::vector) AS similarity
+
+
+Here:
+- $1 is the question embedding.
+- embedding is the stored document embedding.
+- <=> calculates cosine distance.
+- 1 - distance gives cosine similarity.
+This is how RAG finds relevant document chunks.
+4. One important practical experiment
+Try asking these two questions:
+1. "What information is available in Test Policy?"
+2. "Tell me about the policy described in the uploaded document."
+If the document contains relevant information, both questions may retrieve it despite using different wording.
+-----------------------
+SELECT
+    document_name,
+    chunk_index,
+    similarity,
+    LEFT(chunk_content, 500) AS content_preview
+FROM (
+    SELECT
+        document_name,
+        chunk_index,
+        chunk_content,
+        1 - (
+            embedding <=>
+            (
+                SELECT embedding
+                FROM agent_knowledge_chunks_biz_agent
+                WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+                  AND document_name = 'Test Policy'
+                LIMIT 1
+            )
+        ) AS similarity
+    FROM agent_knowledge_chunks_biz_agent
+    WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+) AS results
+ORDER BY similarity DESC;
+
+
+[{
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "similarity": 1,
+  "content_preview": "AI Business Assistant Admin Business Account RAG Knowledge Base Upload business documents and build your AI knowledge base. Upload Knowledge Document Add business information to your knowledge base."
+}, {
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.46879243832635953,
+  "content_preview": "ELECTRONICS STORE WARRANTY POLICY 1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase. 2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase. 3. Dell laptops carry a manufacturer warranty of 1 year. The warranty covers manufacturing defects but does not cover accidental physical damage or liquid damage. 4. Customers must provide the original purchase invoice when requesting warranty service. 5. Warranty claims "
+}, {
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.4627063135652667,
+  "content_preview": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-year manufacturer warranty. 3. Logitech accessories come with a 1-year warranty. 4. Warranty covers manufacturing defects and hardware failures. 5. Physical damage, water damage, and accidental damage are not covered under warranty. 6. Customers must provide the original purchase invoice to claim warranty. 7. Warranty claims can be initiated by conta"
+}]
+
+
+
+------------
+Excellent! Now we have identified exactly what happened. Your RAG pipeline is behaving consistently, but this experiment exposed an important limitation.
+1. What your database results prove
+Your Test Policy contains:
+AI Business Assistant
+Admin
+Business Account
+RAG Knowledge Base
+Upload business documents and build your AI knowledge base.
+Upload Knowledge Document
+Add business information to your knowledge base.
+
+
+It does not contain an actual business policy.
+
+Your similarity results:
+Document	Similarity
+Test Policy	100%
+Electronics Store Warranty Policy	46.88%
+Product Warranty Policy	46.27%
+
+The 100% similarity is expected because you compared the Test Policy embedding against itself.
+2. Why did RAG retrieve the other documents?
+Your current repository uses:
+ORDER BY embedding <=> $1::vector
+LIMIT $3
+
+
+This retrieves the top five closest chunks, regardless of their document names.
+
+There is no minimum similarity threshold.
+
+Therefore, even moderately similar documents can be retrieved.
+3. Three improvements I recommend
+1. Similarity threshold: Exclude chunks that are insufficiently relevant.
+2. Grounded answer generation: Instruct Gemini not to invent information or claim that a document contains information it does not contain.
+3. Source transparency: Display the retrieved sources and similarity scores clearly.
+One caution: a similarity threshold should be calibrated using actual queries. A score of 46% does not automatically mean irrelevant, and a score of 70% does not guarantee relevance.
+4. Next step: Inspect your answer-generation service
+
+---------------
+What is happening currently?
+Your code follows these steps:
+1. searchKnowledge() converts the user's question into an embedding.
+2. It retrieves the top matching knowledge chunks from PostgreSQL.
+3. It combines all retrieved chunks into one context string.
+4. It sends that context and the question to Gemini.
+5. Gemini generates an answer.
+The issue: You retrieve the top five matching chunks, but you do not check whether those chunks are sufficiently relevant before sending them to Gemini.
+
+For example, when asking about Test Policy, the search can also retrieve warranty-policy documents because they have semantic similarity to the question.
+My recommendation
+Let's improve this in three stages:
+- Stage 1: Add similarity-based relevance filtering.
+- Stage 2: Improve the Gemini prompt so it does not confuse document names with actual evidence.
+- Stage 3: Return only genuinely relevant sources to the frontend.
+-----------------
+SELECT
+    document_name,
+    chunk_index,
+    ROUND(
+        (1 - (embedding <=> (
+            SELECT embedding
+            FROM agent_knowledge_chunks_biz_agent
+            WHERE document_name = 'Test Policy'
+            LIMIT 1
+        )))::numeric,
+        4
+    ) AS similarity,
+    LEFT(chunk_content, 150) AS content_preview
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+ORDER BY embedding <=> (
+    SELECT embedding
+    FROM agent_knowledge_chunks_biz_agent
+    WHERE document_name = 'Test Policy'
+    LIMIT 1
+)
+LIMIT 10;
+------------------
+[{
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "similarity": 1.0000,
+  "content_preview": "AI Business Assistant Admin Business Account RAG Knowledge Base Upload business documents and build your AI knowledge base. Upload Knowledge Document "
+}, {
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.4688,
+  "content_preview": "ELECTRONICS STORE WARRANTY POLICY 1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase. 2. Samsung s"
+}, {
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.4627,
+  "content_preview": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-ye"
+}]
+
+-----------------
+SELECT
+    document_name,
+    chunk_index,
+    chunk_content
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+  AND document_name IN (
+      'Electronics Store Warranty Policy',
+      'Product Warranty Policy'
+  )
+ORDER BY document_name, chunk_index;
+----------------
+[{
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "chunk_content": "ELECTRONICS STORE WARRANTY POLICY 1. Samsung LED and QLED televisions carry a manufacturer warranty of 2 years from the date of purchase. 2. Samsung smartphones carry a manufacturer warranty of 1 year from the date of purchase. 3. Dell laptops carry a manufacturer warranty of 1 year. The warranty covers manufacturing defects but does not cover accidental physical damage or liquid damage. 4. Customers must provide the original purchase invoice when requesting warranty service. 5. Warranty claims must be submitted through an authorised service centre. 6. Accessories such as cables, chargers and headphones carry a 6-month manufacturer warranty."
+}, {
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "chunk_content": "Product Warranty Policy – Demo Electronics Store 1. All Samsung smartphones come with a 1-year manufacturer warranty. 2. Dell laptops come with a 2-year manufacturer warranty. 3. Logitech accessories come with a 1-year warranty. 4. Warranty covers manufacturing defects and hardware failures. 5. Physical damage, water damage, and accidental damage are not covered under warranty. 6. Customers must provide the original purchase invoice to claim warranty. 7. Warranty claims can be initiated by contacting the customer support team. 8. Replacement or repair is subject to manufacturer warranty terms and conditions."
+}]
+
+
+
+Ask Your Business Knowledge
+Ask questions based on your uploaded business documents.
+
+What is the warranty period for Dell laptops?
+What is the warranty period for Dell laptops?
+Ask AI
+AI Answer
+There is conflicting information regarding the warranty period for Dell laptops in the provided documents:
+
+* **Electronics Store Warranty Policy** states that Dell laptops carry a manufacturer warranty of **1 year**.
+* **Product Warranty Policy** states that Dell laptops come with a **2-year** manufacturer warranty.
+
+Please confirm which information is authoritative.
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 71.02%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 67.95%
+
+Test Policy
+
+Chunk: 0 | Similarity: 36.29%
+-------------------------
+What information is available in Test Policy? Explain the contents of this document and do not use information from other business documents.
+
+Ask Your Business Knowledge
+Ask questions based on your uploaded business documents.
+
+What information is available in Test Policy? Explain the contents of this document and do not use information from other business documents.
+Ask AI
+AI Answer
+Based on **Test Policy**, the document contains administrative text related to managing the knowledge base:
+
+* **Header/Account Information:** AI Business Assistant Admin Business Account RAG Knowledge Base
+* **Instructions/Actions:** 
+  * "Upload business documents and build your AI knowledge base."
+  * "Upload Knowledge Document Add business information to your knowledge base."
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 53.88%
+
+Test Policy
+
+Chunk: 0 | Similarity: 52.97%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 52.36%
+-------------------------
+What are the instructions available in Test Policy?
+
+AI Answer
+According to **Source 3: Test Policy**, the following instructions/actions are provided:
+
+* Upload business documents and build your AI knowledge base.
+* Add business information to your knowledge base (via Upload Knowledge Document).
+-----------------
+Excellent! This is another successful RAG test. Correct answer
+
+
+Your AI correctly extracted both instructions from Test Policy:
+1. Upload business documents and build your AI knowledge base.
+2. Add business information to your knowledge base using Upload Knowledge Document.
+Current RAG testing status
+Test	Result
+Samsung smartphone warranty	Passed
+Dell conflicting warranty policies	Passed
+Test Policy information	Passed
+Test Policy instructions	Passed
+----------------
+improving RAG relevance filtering
+----------------
+SELECT
+    document_name,
+    chunk_index,
+    ROUND(
+        (1 - (embedding <=> (
+            SELECT embedding
+            FROM agent_knowledge_chunks_biz_agent
+            WHERE document_name = 'Test Policy'
+            LIMIT 1
+        )))::numeric,
+        4
+    ) AS similarity
+FROM agent_knowledge_chunks_biz_agent
+WHERE business_id = 'deb3affe-4468-4c75-9125-187376f1b0f9'
+ORDER BY embedding <=> (
+    SELECT embedding
+    FROM agent_knowledge_chunks_biz_agent
+    WHERE document_name = 'Test Policy'
+    LIMIT 1
+);
+----------------
+[{
+  "document_name": "Test Policy",
+  "chunk_index": 0,
+  "similarity": 1.0000
+}, {
+  "document_name": "Electronics Store Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.4688
+}, {
+  "document_name": "Product Warranty Policy",
+  "chunk_index": 0,
+  "similarity": 0.4627
+}]
+
+----------------
+Inside searchKnowledgeChunks(), replace the SQL condition:
+WHERE business_id = $2
+  AND 1 - (embedding <=> $1::vector) >= $4
+ORDER BY embedding <=> $1::vector
+LIMIT $3
+
+
+with:
+WHERE business_id = $2
+ORDER BY embedding <=> $1::vector
+LIMIT $3
+----------------
+RAG test results
+Test scenario	Result
+Test Policy information	Passed
+Samsung smartphone warranty	Passed
+Dell conflicting warranty	Passed
+
+2. What have we achieved?
+Your AI Business Assistant can now:
+- Retrieve business knowledge using vector similarity.
+- Generate embeddings using Gemini.
+- Search PostgreSQL with pgvector.
+- Identify relevant document content.
+- Answer questions using retrieved knowledge.
+- Identify conflicting business policies.
+- Avoid substituting unrelated document information when a specific document is requested.
+----------------
+Relevant Source Selection.
+----------------
+Fantastic! All three tests have passed. Relevant Source Selection working
+
+1. Test results
+Test 1 — Test Policy
+Passed
+
+Only Test Policy is displayed as the source.
+
+Test 2 — Samsung warranty
+Passed
+
+Both warranty documents are correctly identified.
+
+Test 3 — Dell warranty
+Passed
+
+Both conflicting policies are displayed, with the correct warranty periods.
+
+2. What we have achieved
+Your RAG Knowledge system now supports:
+1. Document ingestion and chunking.
+2. Gemini embedding generation.
+3. PostgreSQL vector storage using pgvector.
+4. Semantic similarity search.
+5. Context-based answer generation.
+6. Conflict identification between documents.
+7. Structured JSON responses.
+8. Relevant source selection.
+9. Source similarity display.
+An important improvement: Source selection happens within the same Gemini request as answer generation. We have not introduced a separate Gemini call.
+3. Recommended next enhancement
+I suggest we now work on RAG Knowledge Management – Document Versioning and Updates.
+
+For example:
+- Upload a revised warranty policy.
+- Maintain the latest document version.
+- Avoid accidentally mixing old and new policy chunks.
+- Allow administrators to identify outdated knowledge.
+----------------
+RAG Knowledge Management – Document Versioning and Updates.
+----------------
+Absolutely! We can do this later. It is NOT a must at this stage.
+
+Your AI Business Assistant Agent already has a working RAG implementation with:
+- Knowledge document upload.
+- Text chunking and embedding generation.
+- PostgreSQL vector storage.
+- Semantic search.
+- Gemini-powered question answering.
+- Conflict detection.
+- Relevant source selection.
+When is document versioning necessary?
+It becomes important when you start using the system with real business documents.
+
+For example:
+Scenario	Versioning needed?
+Learning and demonstrations	No
+Testing RAG functionality	No
+Uploading demo policies	No
+Updating company policies regularly	Yes
+Managing multiple versions of contracts	Yes
+Production deployment with business customers	Strongly recommended
+
+My recommendation
+Continue without versioning for now
+Let's first complete the core AI Business Assistant features. We can implement document versioning later without disturbing the working RAG pipeline.
+
+One important thing: Before production use, we should ensure that outdated documents cannot continue influencing customer-facing answers.
+
+For now, your RAG implementation is in a good state. Let's move forward!
+----------------
+----------------

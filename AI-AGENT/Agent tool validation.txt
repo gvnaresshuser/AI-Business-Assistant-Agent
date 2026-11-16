@@ -1,0 +1,3527 @@
+Agent tool validation
+
+Before connecting Gemini again, let's strengthen the backend validation.
+
+We will verify three things:
+1. Invalid business IDs are rejected by Zod.
+2. Unknown tool names are rejected by the tool executor.
+3. Every registered tool has a matching executor implementation.
+This is important because successful database queries alone do not prove that invalid requests are safely handled.
+
+
+E:\AI-Business-Assistant-Agent\backend>npm run build
+
+> backend@1.0.0 build
+> tsc
+
+
+E:\AI-Business-Assistant-Agent\backend>npx tsx src/agent/tools/tools-smoke-test.ts
+◇ injected env (6) from .env
+
+======================================
+ AI BUSINESS ASSISTANT - TOOL TESTS
+======================================
+(node:17156) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+PostgreSQL client connected
+
+Database connection: SUCCESS
+Business ID: deb3affe-4468-4c75-9125-187376f1b0f9
+
+Testing: getSalesSummary
+Status: PASSED
+Response: {
+  "total_orders": 1500,
+  "total_sales": "302324537.20",
+  "average_order_value": "201549.691466666667"
+}
+
+Testing: getTopProducts
+Status: PASSED
+Response: [
+  {
+    "product_id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+    "product_name": "Dell XPS 14",
+    "brand": "Dell",
+    "total_quantity_sold": 120,
+    "total_revenue": "17999880.00"
+  },
+  {
+    "product_id": "7542576e-7f55-45fe-8b92-f50a3d96e41e",
+    "product_name": "HP Spectre x360",
+    "brand": "HP",
+    "total_quantity_sold": 120,
+    "total_revenue": "16799880.00"
+  },
+  {
+    "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+    "product_name": "iPhone 17 Pro",
+    "brand": "Apple",
+    "total_quantity_sold": 120,
+    "total_revenue": "15599880.00"
+  },
+  {
+    "product_id": "88409d49-40c8-47d4-8c6c-17062d4b0a26",
+    "product_name": "LG 55 inch OLED TV",
+    "brand": "LG",
+    "total_quantity_sold": 120,
+    "total_revenue": "15599880.00"
+  },
+  {
+    "product_id": "310d7a42-afe3-4172-9c58-72ac7581f7bc",
+    "product_name": "Apple MacBook Air",
+    "brand": "Apple",
+    "total_quantity_sold": 120,
+    "total_revenue": "13199880.00"
+  }
+]
+
+Testing: getTopCustomers
+Status: PASSED
+Response: [
+  {
+    "customer_id": "4054e5ba-4b96-4506-83b9-7cf127401a65",
+    "customer_name": "Customer 066",
+    "email": "customer66@example.com",
+    "total_orders": 7,
+    "total_revenue": "982105.87",
+    "average_order_value": "140300.838571428571"
+  },
+  {
+    "customer_id": "0e0c2bc7-ce72-4b48-ad09-e0e2b8ec2f0d",
+    "customer_name": "Customer 024",
+    "email": "customer24@example.com",
+    "total_orders": 8,
+    "total_revenue": "949710.38",
+    "average_order_value": "118713.797500000000"
+  },
+  {
+    "customer_id": "e2813dc9-d663-4fee-af8f-9630444f4630",
+    "customer_name": "Customer 175",
+    "email": "customer175@example.com",
+    "total_orders": 7,
+    "total_revenue": "941890.33",
+    "average_order_value": "134555.761428571429"
+  },
+  {
+    "customer_id": "013c01c2-df7e-4acc-a4e3-8a7abb04bd01",
+    "customer_name": "Customer 115",
+    "email": "customer115@example.com",
+    "total_orders": 7,
+    "total_revenue": "872611.52",
+    "average_order_value": "124658.788571428571"
+  },
+  {
+    "customer_id": "2dff1810-9730-48c8-ab6e-a860702504c0",
+    "customer_name": "Customer 022",
+    "email": "customer22@example.com",
+    "total_orders": 8,
+    "total_revenue": "870213.42",
+    "average_order_value": "108776.677500000000"
+  }
+]
+
+Testing: getLowStockProducts
+Status: PASSED
+Response: [
+  {
+    "product_id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+    "product_name": "Bose Soundbar",
+    "brand": "Bose",
+    "sku": "AUD003",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+    "product_name": "Dell XPS 14",
+    "brand": "Dell",
+    "sku": "LAP002",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 3
+  },
+  {
+    "product_id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+    "product_name": "Samsung 1TB SSD",
+    "brand": "Samsung",
+    "sku": "STR001",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 10
+  },
+  {
+    "product_id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+    "product_name": "TCL 43 inch Smart TV",
+    "brand": "TCL",
+    "sku": "TV006",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+    "product_name": "iPhone 17 Pro",
+    "brand": "Apple",
+    "sku": "MOB004",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 3
+  },
+  {
+    "product_id": "7542576e-7f55-45fe-8b92-f50a3d96e41e",
+    "product_name": "HP Spectre x360",
+    "brand": "HP",
+    "sku": "LAP004",
+    "quantity_on_hand": 1,
+    "quantity_reserved": 0,
+    "quantity_available": 1,
+    "reorder_level": 3
+  },
+  {
+    "product_id": "66c1a5a5-83af-4947-83f9-f1d88500c096",
+    "product_name": "Apple AirPods Pro",
+    "brand": "Apple",
+    "sku": "AUD005",
+    "quantity_on_hand": 3,
+    "quantity_reserved": 0,
+    "quantity_available": 3,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "b6c6f00a-9d05-4e45-803f-12d326062d3c",
+    "product_name": "HP Pavilion 15",
+    "brand": "HP",
+    "sku": "LAP003",
+    "quantity_on_hand": 3,
+    "quantity_reserved": 0,
+    "quantity_available": 3,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "96758ede-4021-4eff-a5fc-db3ac2fc2e2a",
+    "product_name": "OnePlus 14",
+    "brand": "OnePlus",
+    "sku": "MOB005",
+    "quantity_on_hand": 3,
+    "quantity_reserved": 0,
+    "quantity_available": 3,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "607674f3-314d-44ee-ab53-0c468582483a",
+    "product_name": "OnePlus Nord 6",
+    "brand": "OnePlus",
+    "sku": "MOB006",
+    "quantity_on_hand": 3,
+    "quantity_reserved": 0,
+    "quantity_available": 3,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "37299ff5-73c3-43d1-8ebe-bbbde827a8bc",
+    "product_name": "WD 2TB External HDD",
+    "brand": "Western Digital",
+    "sku": "STR002",
+    "quantity_on_hand": 8,
+    "quantity_reserved": 0,
+    "quantity_available": 8,
+    "reorder_level": 10
+  },
+  {
+    "product_id": "7e55fa50-6c66-46df-b0a4-68e0e5bae3d3",
+    "product_name": "Boat Airdopes",
+    "brand": "Boat",
+    "sku": "AUD004",
+    "quantity_on_hand": 18,
+    "quantity_reserved": 0,
+    "quantity_available": 18,
+    "reorder_level": 20
+  },
+  {
+    "product_id": "2f2bba5d-3ff9-4ad4-823b-da9c1e29dd71",
+    "product_name": "SanDisk 128GB Pen Drive",
+    "brand": "SanDisk",
+    "sku": "STR003",
+    "quantity_on_hand": 18,
+    "quantity_reserved": 0,
+    "quantity_available": 18,
+    "reorder_level": 20
+  },
+  {
+    "product_id": "3ec0c355-ac08-4896-9426-8c6d89f4fe34",
+    "product_name": "Wireless Mouse",
+    "brand": "Logitech",
+    "sku": "ACC002",
+    "quantity_on_hand": 18,
+    "quantity_reserved": 0,
+    "quantity_available": 18,
+    "reorder_level": 20
+  },
+  {
+    "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+    "product_name": "USB C Cable",
+    "brand": "Portronics",
+    "sku": "ACC001",
+    "quantity_on_hand": 28,
+    "quantity_reserved": 0,
+    "quantity_available": 28,
+    "reorder_level": 30
+  }
+]
+
+Testing: getOutOfStockProducts
+Status: PASSED
+Response: [
+  {
+    "product_id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+    "product_name": "Bose Soundbar",
+    "brand": "Bose",
+    "sku": "AUD003",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+    "product_name": "Dell XPS 14",
+    "brand": "Dell",
+    "sku": "LAP002",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 3
+  },
+  {
+    "product_id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+    "product_name": "Samsung 1TB SSD",
+    "brand": "Samsung",
+    "sku": "STR001",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 10
+  },
+  {
+    "product_id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+    "product_name": "TCL 43 inch Smart TV",
+    "brand": "TCL",
+    "sku": "TV006",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 5
+  },
+  {
+    "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+    "product_name": "iPhone 17 Pro",
+    "brand": "Apple",
+    "sku": "MOB004",
+    "quantity_on_hand": 0,
+    "quantity_reserved": 0,
+    "quantity_available": 0,
+    "reorder_level": 3
+  }
+]
+
+Testing: getMonthlySales
+Status: PASSED
+Response: [
+  {
+    "month": "2025-11",
+    "total_orders": 125,
+    "total_sales": "24741287.70",
+    "average_order_value": "197930.301600000000"
+  },
+  {
+    "month": "2025-12",
+    "total_orders": 129,
+    "total_sales": "27092303.08",
+    "average_order_value": "210017.853333333333"
+  },
+  {
+    "month": "2026-01",
+    "total_orders": 124,
+    "total_sales": "25132861.20",
+    "average_order_value": "202684.364516129032"
+  },
+  {
+    "month": "2026-02",
+    "total_orders": 117,
+    "total_sales": "23169837.74",
+    "average_order_value": "198032.801196581197"
+  },
+  {
+    "month": "2026-03",
+    "total_orders": 129,
+    "total_sales": "25335625.02",
+    "average_order_value": "196400.193953488372"
+  },
+  {
+    "month": "2026-04",
+    "total_orders": 120,
+    "total_sales": "24588024.26",
+    "average_order_value": "204900.202166666667"
+  },
+  {
+    "month": "2026-05",
+    "total_orders": 129,
+    "total_sales": "26263477.60",
+    "average_order_value": "203592.849612403101"
+  },
+  {
+    "month": "2026-06",
+    "total_orders": 125,
+    "total_sales": "25419066.41",
+    "average_order_value": "203352.531280000000"
+  },
+  {
+    "month": "2026-07",
+    "total_orders": 124,
+    "total_sales": "25348405.96",
+    "average_order_value": "204422.628709677419"
+  },
+  {
+    "month": "2026-08",
+    "total_orders": 129,
+    "total_sales": "24671764.72",
+    "average_order_value": "191253.990077519380"
+  },
+  {
+    "month": "2026-09",
+    "total_orders": 125,
+    "total_sales": "25687542.83",
+    "average_order_value": "205500.342640000000"
+  },
+  {
+    "month": "2026-10",
+    "total_orders": 124,
+    "total_sales": "24874340.68",
+    "average_order_value": "200599.521612903226"
+  }
+]
+
+Testing: getCategorySales
+Status: PASSED
+Response: [
+  {
+    "category_id": "1f94edb0-05c0-4759-9a75-92a1fac9557b",
+    "category_name": "Laptops",
+    "total_products": 8,
+    "total_quantity_sold": 960,
+    "total_sales": "89039040.00"
+  },
+  {
+    "category_id": "853a2ca3-7ddb-4a54-80db-6925511beb4f",
+    "category_name": "Mobiles",
+    "total_products": 8,
+    "total_quantity_sold": 960,
+    "total_sales": "64439040.00"
+  },
+  {
+    "category_id": "5fdfe23d-45a9-4bf9-86b8-6bfd7cb59e18",
+    "category_name": "Televisions",
+    "total_products": 6,
+    "total_quantity_sold": 720,
+    "total_sales": "48119280.00"
+  },
+  {
+    "category_id": "2310553c-9477-4c0e-9047-8e0272cef695",
+    "category_name": "Cameras",
+    "total_products": 5,
+    "total_quantity_sold": 600,
+    "total_sales": "35039400.00"
+  },
+  {
+    "category_id": "bb7f0586-5928-4ef5-82ac-1ffad69d2765",
+    "category_name": "Audio",
+    "total_products": 6,
+    "total_quantity_sold": 720,
+    "total_sales": "15779280.00"
+  },
+  {
+    "category_id": "806800c6-3ba1-4996-8cc1-9e5241f43ea7",
+    "category_name": "Storage",
+    "total_products": 5,
+    "total_quantity_sold": 600,
+    "total_sales": "4847400.00"
+  },
+  {
+    "category_id": "0ae961fc-e1c8-4632-96db-0a8d46a6405b",
+    "category_name": "Networking",
+    "total_products": 5,
+    "total_quantity_sold": 600,
+    "total_sales": "2855400.00"
+  },
+  {
+    "category_id": "487af5f0-6108-4652-b36e-cd6822a94aa0",
+    "category_name": "Accessories",
+    "total_products": 7,
+    "total_quantity_sold": 840,
+    "total_sales": "1355160.00"
+  }
+]
+
+Testing: getPaymentMethodSummary
+Status: PASSED
+Response: [
+  {
+    "payment_method": "Debit Card",
+    "total_payments": 322,
+    "total_amount": "64214483.28"
+  },
+  {
+    "payment_method": "Credit Card",
+    "total_payments": 318,
+    "total_amount": "64212186.56"
+  },
+  {
+    "payment_method": "UPI",
+    "total_payments": 319,
+    "total_amount": "63444171.31"
+  },
+  {
+    "payment_method": "Net Banking",
+    "total_payments": 316,
+    "total_amount": "62897364.55"
+  }
+]
+
+Testing: getDailySales
+Status: PASSED
+Response: [
+  {
+    "sale_date": "2026-10-31",
+    "total_orders": 4,
+    "total_sales": "1454731.54",
+    "average_order_value": "363682.885000000000"
+  },
+  {
+    "sale_date": "2026-10-30",
+    "total_orders": 4,
+    "total_sales": "964900.91",
+    "average_order_value": "241225.227500000000"
+  },
+  {
+    "sale_date": "2026-10-29",
+    "total_orders": 4,
+    "total_sales": "699249.17",
+    "average_order_value": "174812.292500000000"
+  },
+  {
+    "sale_date": "2026-10-28",
+    "total_orders": 4,
+    "total_sales": "689113.30",
+    "average_order_value": "172278.325000000000"
+  },
+  {
+    "sale_date": "2026-10-27",
+    "total_orders": 4,
+    "total_sales": "310873.12",
+    "average_order_value": "77718.280000000000"
+  },
+  {
+    "sale_date": "2026-10-26",
+    "total_orders": 4,
+    "total_sales": "393604.57",
+    "average_order_value": "98401.142500000000"
+  },
+  {
+    "sale_date": "2026-10-25",
+    "total_orders": 4,
+    "total_sales": "352153.97",
+    "average_order_value": "88038.492500000000"
+  },
+  {
+    "sale_date": "2026-10-24",
+    "total_orders": 4,
+    "total_sales": "1164092.61",
+    "average_order_value": "291023.152500000000"
+  },
+  {
+    "sale_date": "2026-10-23",
+    "total_orders": 4,
+    "total_sales": "877662.13",
+    "average_order_value": "219415.532500000000"
+  },
+  {
+    "sale_date": "2026-10-22",
+    "total_orders": 4,
+    "total_sales": "841319.94",
+    "average_order_value": "210329.985000000000"
+  },
+  {
+    "sale_date": "2026-10-21",
+    "total_orders": 4,
+    "total_sales": "1090119.77",
+    "average_order_value": "272529.942500000000"
+  },
+  {
+    "sale_date": "2026-10-20",
+    "total_orders": 4,
+    "total_sales": "620983.96",
+    "average_order_value": "155245.990000000000"
+  },
+  {
+    "sale_date": "2026-10-19",
+    "total_orders": 4,
+    "total_sales": "425888.04",
+    "average_order_value": "106472.010000000000"
+  },
+  {
+    "sale_date": "2026-10-18",
+    "total_orders": 4,
+    "total_sales": "611739.49",
+    "average_order_value": "152934.872500000000"
+  },
+  {
+    "sale_date": "2026-10-17",
+    "total_orders": 4,
+    "total_sales": "249986.30",
+    "average_order_value": "62496.575000000000"
+  },
+  {
+    "sale_date": "2026-10-16",
+    "total_orders": 4,
+    "total_sales": "759735.14",
+    "average_order_value": "189933.785000000000"
+  },
+  {
+    "sale_date": "2026-10-15",
+    "total_orders": 4,
+    "total_sales": "1089282.35",
+    "average_order_value": "272320.587500000000"
+  },
+  {
+    "sale_date": "2026-10-14",
+    "total_orders": 4,
+    "total_sales": "1135472.87",
+    "average_order_value": "283868.217500000000"
+  },
+  {
+    "sale_date": "2026-10-13",
+    "total_orders": 4,
+    "total_sales": "972531.72",
+    "average_order_value": "243132.930000000000"
+  },
+  {
+    "sale_date": "2026-10-12",
+    "total_orders": 4,
+    "total_sales": "1068471.12",
+    "average_order_value": "267117.780000000000"
+  },
+  {
+    "sale_date": "2026-10-11",
+    "total_orders": 4,
+    "total_sales": "867034.73",
+    "average_order_value": "216758.682500000000"
+  },
+  {
+    "sale_date": "2026-10-10",
+    "total_orders": 4,
+    "total_sales": "811277.81",
+    "average_order_value": "202819.452500000000"
+  },
+  {
+    "sale_date": "2026-10-09",
+    "total_orders": 4,
+    "total_sales": "1135570.71",
+    "average_order_value": "283892.677500000000"
+  },
+  {
+    "sale_date": "2026-10-08",
+    "total_orders": 4,
+    "total_sales": "749794.85",
+    "average_order_value": "187448.712500000000"
+  },
+  {
+    "sale_date": "2026-10-07",
+    "total_orders": 4,
+    "total_sales": "909169.94",
+    "average_order_value": "227292.485000000000"
+  },
+  {
+    "sale_date": "2026-10-06",
+    "total_orders": 4,
+    "total_sales": "1140191.89",
+    "average_order_value": "285047.972500000000"
+  },
+  {
+    "sale_date": "2026-10-05",
+    "total_orders": 4,
+    "total_sales": "983366.68",
+    "average_order_value": "245841.670000000000"
+  },
+  {
+    "sale_date": "2026-10-04",
+    "total_orders": 4,
+    "total_sales": "847509.24",
+    "average_order_value": "211877.310000000000"
+  },
+  {
+    "sale_date": "2026-10-03",
+    "total_orders": 4,
+    "total_sales": "506436.29",
+    "average_order_value": "126609.072500000000"
+  },
+  {
+    "sale_date": "2026-10-02",
+    "total_orders": 4,
+    "total_sales": "563158.30",
+    "average_order_value": "140789.575000000000"
+  },
+  {
+    "sale_date": "2026-10-01",
+    "total_orders": 4,
+    "total_sales": "588918.22",
+    "average_order_value": "147229.555000000000"
+  },
+  {
+    "sale_date": "2026-09-30",
+    "total_orders": 4,
+    "total_sales": "588117.35",
+    "average_order_value": "147029.337500000000"
+  },
+  {
+    "sale_date": "2026-09-29",
+    "total_orders": 4,
+    "total_sales": "1269231.77",
+    "average_order_value": "317307.942500000000"
+  },
+  {
+    "sale_date": "2026-09-28",
+    "total_orders": 4,
+    "total_sales": "1113332.98",
+    "average_order_value": "278333.245000000000"
+  },
+  {
+    "sale_date": "2026-09-27",
+    "total_orders": 4,
+    "total_sales": "876721.12",
+    "average_order_value": "219180.280000000000"
+  },
+  {
+    "sale_date": "2026-09-26",
+    "total_orders": 4,
+    "total_sales": "1137764.61",
+    "average_order_value": "284441.152500000000"
+  },
+  {
+    "sale_date": "2026-09-25",
+    "total_orders": 4,
+    "total_sales": "757030.97",
+    "average_order_value": "189257.742500000000"
+  },
+  {
+    "sale_date": "2026-09-24",
+    "total_orders": 4,
+    "total_sales": "362321.31",
+    "average_order_value": "90580.327500000000"
+  },
+  {
+    "sale_date": "2026-09-23",
+    "total_orders": 4,
+    "total_sales": "355922.53",
+    "average_order_value": "88980.632500000000"
+  },
+  {
+    "sale_date": "2026-09-22",
+    "total_orders": 4,
+    "total_sales": "373411.94",
+    "average_order_value": "93352.985000000000"
+  },
+  {
+    "sale_date": "2026-09-21",
+    "total_orders": 5,
+    "total_sales": "938262.03",
+    "average_order_value": "187652.406000000000"
+  },
+  {
+    "sale_date": "2026-09-20",
+    "total_orders": 5,
+    "total_sales": "926495.59",
+    "average_order_value": "185299.118000000000"
+  },
+  {
+    "sale_date": "2026-09-19",
+    "total_orders": 5,
+    "total_sales": "1558939.53",
+    "average_order_value": "311787.906000000000"
+  },
+  {
+    "sale_date": "2026-09-18",
+    "total_orders": 5,
+    "total_sales": "1288780.13",
+    "average_order_value": "257756.026000000000"
+  },
+  {
+    "sale_date": "2026-09-17",
+    "total_orders": 5,
+    "total_sales": "931587.58",
+    "average_order_value": "186317.516000000000"
+  },
+  {
+    "sale_date": "2026-09-16",
+    "total_orders": 4,
+    "total_sales": "1077400.53",
+    "average_order_value": "269350.132500000000"
+  },
+  {
+    "sale_date": "2026-09-15",
+    "total_orders": 4,
+    "total_sales": "444817.01",
+    "average_order_value": "111204.252500000000"
+  },
+  {
+    "sale_date": "2026-09-14",
+    "total_orders": 4,
+    "total_sales": "445748.61",
+    "average_order_value": "111437.152500000000"
+  },
+  {
+    "sale_date": "2026-09-13",
+    "total_orders": 4,
+    "total_sales": "430664.91",
+    "average_order_value": "107666.227500000000"
+  },
+  {
+    "sale_date": "2026-09-12",
+    "total_orders": 4,
+    "total_sales": "407768.94",
+    "average_order_value": "101942.235000000000"
+  },
+  {
+    "sale_date": "2026-09-11",
+    "total_orders": 4,
+    "total_sales": "789802.69",
+    "average_order_value": "197450.672500000000"
+  },
+  {
+    "sale_date": "2026-09-10",
+    "total_orders": 4,
+    "total_sales": "1035475.48",
+    "average_order_value": "258868.870000000000"
+  },
+  {
+    "sale_date": "2026-09-09",
+    "total_orders": 4,
+    "total_sales": "1147152.54",
+    "average_order_value": "286788.135000000000"
+  },
+  {
+    "sale_date": "2026-09-08",
+    "total_orders": 4,
+    "total_sales": "994280.27",
+    "average_order_value": "248570.067500000000"
+  },
+  {
+    "sale_date": "2026-09-07",
+    "total_orders": 4,
+    "total_sales": "950807.30",
+    "average_order_value": "237701.825000000000"
+  },
+  {
+    "sale_date": "2026-09-06",
+    "total_orders": 4,
+    "total_sales": "662349.62",
+    "average_order_value": "165587.405000000000"
+  },
+  {
+    "sale_date": "2026-09-05",
+    "total_orders": 4,
+    "total_sales": "804482.15",
+    "average_order_value": "201120.537500000000"
+  },
+  {
+    "sale_date": "2026-09-04",
+    "total_orders": 4,
+    "total_sales": "1090012.07",
+    "average_order_value": "272503.017500000000"
+  },
+  {
+    "sale_date": "2026-09-03",
+    "total_orders": 4,
+    "total_sales": "1010547.90",
+    "average_order_value": "252636.975000000000"
+  },
+  {
+    "sale_date": "2026-09-02",
+    "total_orders": 4,
+    "total_sales": "716831.12",
+    "average_order_value": "179207.780000000000"
+  },
+  {
+    "sale_date": "2026-09-01",
+    "total_orders": 4,
+    "total_sales": "1201482.25",
+    "average_order_value": "300370.562500000000"
+  },
+  {
+    "sale_date": "2026-08-31",
+    "total_orders": 4,
+    "total_sales": "998090.81",
+    "average_order_value": "249522.702500000000"
+  },
+  {
+    "sale_date": "2026-08-30",
+    "total_orders": 4,
+    "total_sales": "676953.21",
+    "average_order_value": "169238.302500000000"
+  },
+  {
+    "sale_date": "2026-08-29",
+    "total_orders": 4,
+    "total_sales": "315502.69",
+    "average_order_value": "78875.672500000000"
+  },
+  {
+    "sale_date": "2026-08-28",
+    "total_orders": 4,
+    "total_sales": "698265.94",
+    "average_order_value": "174566.485000000000"
+  },
+  {
+    "sale_date": "2026-08-27",
+    "total_orders": 4,
+    "total_sales": "610890.97",
+    "average_order_value": "152722.742500000000"
+  },
+  {
+    "sale_date": "2026-08-26",
+    "total_orders": 4,
+    "total_sales": "805743.64",
+    "average_order_value": "201435.910000000000"
+  },
+  {
+    "sale_date": "2026-08-25",
+    "total_orders": 4,
+    "total_sales": "1311284.64",
+    "average_order_value": "327821.160000000000"
+  },
+  {
+    "sale_date": "2026-08-24",
+    "total_orders": 4,
+    "total_sales": "1098797.71",
+    "average_order_value": "274699.427500000000"
+  },
+  {
+    "sale_date": "2026-08-23",
+    "total_orders": 4,
+    "total_sales": "818312.30",
+    "average_order_value": "204578.075000000000"
+  },
+  {
+    "sale_date": "2026-08-22",
+    "total_orders": 4,
+    "total_sales": "1094975.50",
+    "average_order_value": "273743.875000000000"
+  },
+  {
+    "sale_date": "2026-08-21",
+    "total_orders": 4,
+    "total_sales": "486165.35",
+    "average_order_value": "121541.337500000000"
+  },
+  {
+    "sale_date": "2026-08-20",
+    "total_orders": 4,
+    "total_sales": "615138.77",
+    "average_order_value": "153784.692500000000"
+  },
+  {
+    "sale_date": "2026-08-19",
+    "total_orders": 4,
+    "total_sales": "421963.66",
+    "average_order_value": "105490.915000000000"
+  },
+  {
+    "sale_date": "2026-08-18",
+    "total_orders": 4,
+    "total_sales": "589490.12",
+    "average_order_value": "147372.530000000000"
+  },
+  {
+    "sale_date": "2026-08-17",
+    "total_orders": 4,
+    "total_sales": "1152913.45",
+    "average_order_value": "288228.362500000000"
+  },
+  {
+    "sale_date": "2026-08-16",
+    "total_orders": 4,
+    "total_sales": "1023918.65",
+    "average_order_value": "255979.662500000000"
+  },
+  {
+    "sale_date": "2026-08-15",
+    "total_orders": 4,
+    "total_sales": "1164191.61",
+    "average_order_value": "291047.902500000000"
+  },
+  {
+    "sale_date": "2026-08-14",
+    "total_orders": 4,
+    "total_sales": "928237.99",
+    "average_order_value": "232059.497500000000"
+  },
+  {
+    "sale_date": "2026-08-13",
+    "total_orders": 4,
+    "total_sales": "583352.94",
+    "average_order_value": "145838.235000000000"
+  },
+  {
+    "sale_date": "2026-08-12",
+    "total_orders": 4,
+    "total_sales": "363190.09",
+    "average_order_value": "90797.522500000000"
+  },
+  {
+    "sale_date": "2026-08-11",
+    "total_orders": 4,
+    "total_sales": "329613.52",
+    "average_order_value": "82403.380000000000"
+  },
+  {
+    "sale_date": "2026-08-10",
+    "total_orders": 4,
+    "total_sales": "649598.34",
+    "average_order_value": "162399.585000000000"
+  },
+  {
+    "sale_date": "2026-08-09",
+    "total_orders": 4,
+    "total_sales": "911998.99",
+    "average_order_value": "227999.747500000000"
+  },
+  {
+    "sale_date": "2026-08-08",
+    "total_orders": 4,
+    "total_sales": "621842.30",
+    "average_order_value": "155460.575000000000"
+  },
+  {
+    "sale_date": "2026-08-07",
+    "total_orders": 4,
+    "total_sales": "1320589.14",
+    "average_order_value": "330147.285000000000"
+  },
+  {
+    "sale_date": "2026-08-06",
+    "total_orders": 5,
+    "total_sales": "1279133.96",
+    "average_order_value": "255826.792000000000"
+  },
+  {
+    "sale_date": "2026-08-05",
+    "total_orders": 5,
+    "total_sales": "976593.00",
+    "average_order_value": "195318.600000000000"
+  },
+  {
+    "sale_date": "2026-08-04",
+    "total_orders": 5,
+    "total_sales": "667461.47",
+    "average_order_value": "133492.294000000000"
+  },
+  {
+    "sale_date": "2026-08-03",
+    "total_orders": 5,
+    "total_sales": "942049.22",
+    "average_order_value": "188409.844000000000"
+  },
+  {
+    "sale_date": "2026-08-02",
+    "total_orders": 5,
+    "total_sales": "625573.78",
+    "average_order_value": "125114.756000000000"
+  },
+  {
+    "sale_date": "2026-08-01",
+    "total_orders": 4,
+    "total_sales": "589930.96",
+    "average_order_value": "147482.740000000000"
+  },
+  {
+    "sale_date": "2026-07-31",
+    "total_orders": 4,
+    "total_sales": "1488266.94",
+    "average_order_value": "372066.735000000000"
+  },
+  {
+    "sale_date": "2026-07-30",
+    "total_orders": 4,
+    "total_sales": "1050610.05",
+    "average_order_value": "262652.512500000000"
+  },
+  {
+    "sale_date": "2026-07-29",
+    "total_orders": 4,
+    "total_sales": "745742.30",
+    "average_order_value": "186435.575000000000"
+  },
+  {
+    "sale_date": "2026-07-28",
+    "total_orders": 4,
+    "total_sales": "1344642.26",
+    "average_order_value": "336160.565000000000"
+  },
+  {
+    "sale_date": "2026-07-27",
+    "total_orders": 4,
+    "total_sales": "794187.95",
+    "average_order_value": "198546.987500000000"
+  },
+  {
+    "sale_date": "2026-07-26",
+    "total_orders": 4,
+    "total_sales": "438740.57",
+    "average_order_value": "109685.142500000000"
+  },
+  {
+    "sale_date": "2026-07-25",
+    "total_orders": 4,
+    "total_sales": "606931.02",
+    "average_order_value": "151732.755000000000"
+  },
+  {
+    "sale_date": "2026-07-24",
+    "total_orders": 4,
+    "total_sales": "531887.12",
+    "average_order_value": "132971.780000000000"
+  },
+  {
+    "sale_date": "2026-07-23",
+    "total_orders": 4,
+    "total_sales": "775927.05",
+    "average_order_value": "193981.762500000000"
+  },
+  {
+    "sale_date": "2026-07-22",
+    "total_orders": 4,
+    "total_sales": "1119526.97",
+    "average_order_value": "279881.742500000000"
+  },
+  {
+    "sale_date": "2026-07-21",
+    "total_orders": 4,
+    "total_sales": "1215493.41",
+    "average_order_value": "303873.352500000000"
+  },
+  {
+    "sale_date": "2026-07-20",
+    "total_orders": 4,
+    "total_sales": "809657.43",
+    "average_order_value": "202414.357500000000"
+  },
+  {
+    "sale_date": "2026-07-19",
+    "total_orders": 4,
+    "total_sales": "921559.94",
+    "average_order_value": "230389.985000000000"
+  },
+  {
+    "sale_date": "2026-07-18",
+    "total_orders": 4,
+    "total_sales": "661656.93",
+    "average_order_value": "165414.232500000000"
+  },
+  {
+    "sale_date": "2026-07-17",
+    "total_orders": 4,
+    "total_sales": "582681.04",
+    "average_order_value": "145670.260000000000"
+  },
+  {
+    "sale_date": "2026-07-16",
+    "total_orders": 4,
+    "total_sales": "884990.64",
+    "average_order_value": "221247.660000000000"
+  },
+  {
+    "sale_date": "2026-07-15",
+    "total_orders": 4,
+    "total_sales": "698859.01",
+    "average_order_value": "174714.752500000000"
+  },
+  {
+    "sale_date": "2026-07-14",
+    "total_orders": 4,
+    "total_sales": "792352.30",
+    "average_order_value": "198088.075000000000"
+  },
+  {
+    "sale_date": "2026-07-13",
+    "total_orders": 4,
+    "total_sales": "1454731.54",
+    "average_order_value": "363682.885000000000"
+  },
+  {
+    "sale_date": "2026-07-12",
+    "total_orders": 4,
+    "total_sales": "964900.91",
+    "average_order_value": "241225.227500000000"
+  },
+  {
+    "sale_date": "2026-07-11",
+    "total_orders": 4,
+    "total_sales": "699249.17",
+    "average_order_value": "174812.292500000000"
+  },
+  {
+    "sale_date": "2026-07-10",
+    "total_orders": 4,
+    "total_sales": "689113.30",
+    "average_order_value": "172278.325000000000"
+  },
+  {
+    "sale_date": "2026-07-09",
+    "total_orders": 4,
+    "total_sales": "310873.12",
+    "average_order_value": "77718.280000000000"
+  },
+  {
+    "sale_date": "2026-07-08",
+    "total_orders": 4,
+    "total_sales": "393604.57",
+    "average_order_value": "98401.142500000000"
+  },
+  {
+    "sale_date": "2026-07-07",
+    "total_orders": 4,
+    "total_sales": "352153.97",
+    "average_order_value": "88038.492500000000"
+  },
+  {
+    "sale_date": "2026-07-06",
+    "total_orders": 4,
+    "total_sales": "1164092.61",
+    "average_order_value": "291023.152500000000"
+  },
+  {
+    "sale_date": "2026-07-05",
+    "total_orders": 4,
+    "total_sales": "877662.13",
+    "average_order_value": "219415.532500000000"
+  },
+  {
+    "sale_date": "2026-07-04",
+    "total_orders": 4,
+    "total_sales": "841319.94",
+    "average_order_value": "210329.985000000000"
+  },
+  {
+    "sale_date": "2026-07-03",
+    "total_orders": 4,
+    "total_sales": "1090119.77",
+    "average_order_value": "272529.942500000000"
+  },
+  {
+    "sale_date": "2026-07-02",
+    "total_orders": 4,
+    "total_sales": "620983.96",
+    "average_order_value": "155245.990000000000"
+  },
+  {
+    "sale_date": "2026-07-01",
+    "total_orders": 4,
+    "total_sales": "425888.04",
+    "average_order_value": "106472.010000000000"
+  },
+  {
+    "sale_date": "2026-06-30",
+    "total_orders": 4,
+    "total_sales": "611739.49",
+    "average_order_value": "152934.872500000000"
+  },
+  {
+    "sale_date": "2026-06-29",
+    "total_orders": 4,
+    "total_sales": "249986.30",
+    "average_order_value": "62496.575000000000"
+  },
+  {
+    "sale_date": "2026-06-28",
+    "total_orders": 4,
+    "total_sales": "759735.14",
+    "average_order_value": "189933.785000000000"
+  },
+  {
+    "sale_date": "2026-06-27",
+    "total_orders": 4,
+    "total_sales": "1089282.35",
+    "average_order_value": "272320.587500000000"
+  },
+  {
+    "sale_date": "2026-06-26",
+    "total_orders": 4,
+    "total_sales": "1135472.87",
+    "average_order_value": "283868.217500000000"
+  },
+  {
+    "sale_date": "2026-06-25",
+    "total_orders": 4,
+    "total_sales": "972531.72",
+    "average_order_value": "243132.930000000000"
+  },
+  {
+    "sale_date": "2026-06-24",
+    "total_orders": 4,
+    "total_sales": "1068471.12",
+    "average_order_value": "267117.780000000000"
+  },
+  {
+    "sale_date": "2026-06-23",
+    "total_orders": 4,
+    "total_sales": "867034.73",
+    "average_order_value": "216758.682500000000"
+  },
+  {
+    "sale_date": "2026-06-22",
+    "total_orders": 5,
+    "total_sales": "961483.69",
+    "average_order_value": "192296.738000000000"
+  },
+  {
+    "sale_date": "2026-06-21",
+    "total_orders": 5,
+    "total_sales": "1279253.47",
+    "average_order_value": "255850.694000000000"
+  },
+  {
+    "sale_date": "2026-06-20",
+    "total_orders": 5,
+    "total_sales": "786516.48",
+    "average_order_value": "157303.296000000000"
+  },
+  {
+    "sale_date": "2026-06-19",
+    "total_orders": 5,
+    "total_sales": "913395.40",
+    "average_order_value": "182679.080000000000"
+  },
+  {
+    "sale_date": "2026-06-18",
+    "total_orders": 5,
+    "total_sales": "1365684.11",
+    "average_order_value": "273136.822000000000"
+  },
+  {
+    "sale_date": "2026-06-17",
+    "total_orders": 4,
+    "total_sales": "1031736.11",
+    "average_order_value": "257934.027500000000"
+  },
+  {
+    "sale_date": "2026-06-16",
+    "total_orders": 4,
+    "total_sales": "923444.57",
+    "average_order_value": "230861.142500000000"
+  },
+  {
+    "sale_date": "2026-06-15",
+    "total_orders": 4,
+    "total_sales": "916102.94",
+    "average_order_value": "229025.735000000000"
+  },
+  {
+    "sale_date": "2026-06-14",
+    "total_orders": 4,
+    "total_sales": "721768.12",
+    "average_order_value": "180442.030000000000"
+  },
+  {
+    "sale_date": "2026-06-13",
+    "total_orders": 4,
+    "total_sales": "572615.29",
+    "average_order_value": "143153.822500000000"
+  },
+  {
+    "sale_date": "2026-06-12",
+    "total_orders": 4,
+    "total_sales": "604768.37",
+    "average_order_value": "151192.092500000000"
+  },
+  {
+    "sale_date": "2026-06-11",
+    "total_orders": 4,
+    "total_sales": "1085338.11",
+    "average_order_value": "271334.527500000000"
+  },
+  {
+    "sale_date": "2026-06-10",
+    "total_orders": 4,
+    "total_sales": "844354.27",
+    "average_order_value": "211088.567500000000"
+  },
+  {
+    "sale_date": "2026-06-09",
+    "total_orders": 4,
+    "total_sales": "831289.94",
+    "average_order_value": "207822.485000000000"
+  },
+  {
+    "sale_date": "2026-06-08",
+    "total_orders": 4,
+    "total_sales": "1418884.29",
+    "average_order_value": "354721.072500000000"
+  },
+  {
+    "sale_date": "2026-06-07",
+    "total_orders": 4,
+    "total_sales": "836329.24",
+    "average_order_value": "209082.310000000000"
+  },
+  {
+    "sale_date": "2026-06-06",
+    "total_orders": 4,
+    "total_sales": "688733.04",
+    "average_order_value": "172183.260000000000"
+  },
+  {
+    "sale_date": "2026-06-05",
+    "total_orders": 4,
+    "total_sales": "191083.53",
+    "average_order_value": "47770.882500000000"
+  },
+  {
+    "sale_date": "2026-06-04",
+    "total_orders": 4,
+    "total_sales": "415304.30",
+    "average_order_value": "103826.075000000000"
+  },
+  {
+    "sale_date": "2026-06-03",
+    "total_orders": 4,
+    "total_sales": "447953.06",
+    "average_order_value": "111988.265000000000"
+  },
+  {
+    "sale_date": "2026-06-02",
+    "total_orders": 4,
+    "total_sales": "631970.99",
+    "average_order_value": "157992.747500000000"
+  },
+  {
+    "sale_date": "2026-06-01",
+    "total_orders": 4,
+    "total_sales": "1196803.37",
+    "average_order_value": "299200.842500000000"
+  },
+  {
+    "sale_date": "2026-05-31",
+    "total_orders": 4,
+    "total_sales": "1276209.56",
+    "average_order_value": "319052.390000000000"
+  },
+  {
+    "sale_date": "2026-05-30",
+    "total_orders": 4,
+    "total_sales": "772291.12",
+    "average_order_value": "193072.780000000000"
+  },
+  {
+    "sale_date": "2026-05-29",
+    "total_orders": 4,
+    "total_sales": "1077400.53",
+    "average_order_value": "269350.132500000000"
+  },
+  {
+    "sale_date": "2026-05-28",
+    "total_orders": 4,
+    "total_sales": "444817.01",
+    "average_order_value": "111204.252500000000"
+  },
+  {
+    "sale_date": "2026-05-27",
+    "total_orders": 4,
+    "total_sales": "445748.61",
+    "average_order_value": "111437.152500000000"
+  },
+  {
+    "sale_date": "2026-05-26",
+    "total_orders": 4,
+    "total_sales": "430664.91",
+    "average_order_value": "107666.227500000000"
+  },
+  {
+    "sale_date": "2026-05-25",
+    "total_orders": 4,
+    "total_sales": "407768.94",
+    "average_order_value": "101942.235000000000"
+  },
+  {
+    "sale_date": "2026-05-24",
+    "total_orders": 4,
+    "total_sales": "789802.69",
+    "average_order_value": "197450.672500000000"
+  },
+  {
+    "sale_date": "2026-05-23",
+    "total_orders": 4,
+    "total_sales": "1035475.48",
+    "average_order_value": "258868.870000000000"
+  },
+  {
+    "sale_date": "2026-05-22",
+    "total_orders": 4,
+    "total_sales": "1147152.54",
+    "average_order_value": "286788.135000000000"
+  },
+  {
+    "sale_date": "2026-05-21",
+    "total_orders": 4,
+    "total_sales": "994280.27",
+    "average_order_value": "248570.067500000000"
+  },
+  {
+    "sale_date": "2026-05-20",
+    "total_orders": 4,
+    "total_sales": "950807.30",
+    "average_order_value": "237701.825000000000"
+  },
+  {
+    "sale_date": "2026-05-19",
+    "total_orders": 4,
+    "total_sales": "662349.62",
+    "average_order_value": "165587.405000000000"
+  },
+  {
+    "sale_date": "2026-05-18",
+    "total_orders": 4,
+    "total_sales": "804482.15",
+    "average_order_value": "201120.537500000000"
+  },
+  {
+    "sale_date": "2026-05-17",
+    "total_orders": 4,
+    "total_sales": "1090012.07",
+    "average_order_value": "272503.017500000000"
+  },
+  {
+    "sale_date": "2026-05-16",
+    "total_orders": 4,
+    "total_sales": "1010547.90",
+    "average_order_value": "252636.975000000000"
+  },
+  {
+    "sale_date": "2026-05-15",
+    "total_orders": 4,
+    "total_sales": "716831.12",
+    "average_order_value": "179207.780000000000"
+  },
+  {
+    "sale_date": "2026-05-14",
+    "total_orders": 4,
+    "total_sales": "1201482.25",
+    "average_order_value": "300370.562500000000"
+  },
+  {
+    "sale_date": "2026-05-13",
+    "total_orders": 4,
+    "total_sales": "998090.81",
+    "average_order_value": "249522.702500000000"
+  },
+  {
+    "sale_date": "2026-05-12",
+    "total_orders": 4,
+    "total_sales": "676953.21",
+    "average_order_value": "169238.302500000000"
+  },
+  {
+    "sale_date": "2026-05-11",
+    "total_orders": 4,
+    "total_sales": "315502.69",
+    "average_order_value": "78875.672500000000"
+  },
+  {
+    "sale_date": "2026-05-10",
+    "total_orders": 4,
+    "total_sales": "698265.94",
+    "average_order_value": "174566.485000000000"
+  },
+  {
+    "sale_date": "2026-05-09",
+    "total_orders": 4,
+    "total_sales": "610890.97",
+    "average_order_value": "152722.742500000000"
+  },
+  {
+    "sale_date": "2026-05-08",
+    "total_orders": 4,
+    "total_sales": "805743.64",
+    "average_order_value": "201435.910000000000"
+  },
+  {
+    "sale_date": "2026-05-07",
+    "total_orders": 5,
+    "total_sales": "1619685.93",
+    "average_order_value": "323937.186000000000"
+  },
+  {
+    "sale_date": "2026-05-06",
+    "total_orders": 5,
+    "total_sales": "1307910.41",
+    "average_order_value": "261582.082000000000"
+  },
+  {
+    "sale_date": "2026-05-05",
+    "total_orders": 5,
+    "total_sales": "1069647.58",
+    "average_order_value": "213929.516000000000"
+  },
+  {
+    "sale_date": "2026-05-04",
+    "total_orders": 5,
+    "total_sales": "1403730.83",
+    "average_order_value": "280746.166000000000"
+  },
+  {
+    "sale_date": "2026-05-03",
+    "total_orders": 5,
+    "total_sales": "780687.68",
+    "average_order_value": "156137.536000000000"
+  },
+  {
+    "sale_date": "2026-05-02",
+    "total_orders": 4,
+    "total_sales": "362321.31",
+    "average_order_value": "90580.327500000000"
+  },
+  {
+    "sale_date": "2026-05-01",
+    "total_orders": 4,
+    "total_sales": "355922.53",
+    "average_order_value": "88980.632500000000"
+  },
+  {
+    "sale_date": "2026-04-30",
+    "total_orders": 4,
+    "total_sales": "373411.94",
+    "average_order_value": "93352.985000000000"
+  },
+  {
+    "sale_date": "2026-04-29",
+    "total_orders": 4,
+    "total_sales": "927414.29",
+    "average_order_value": "231853.572500000000"
+  },
+  {
+    "sale_date": "2026-04-28",
+    "total_orders": 4,
+    "total_sales": "831344.92",
+    "average_order_value": "207836.230000000000"
+  },
+  {
+    "sale_date": "2026-04-27",
+    "total_orders": 4,
+    "total_sales": "1374367.44",
+    "average_order_value": "343591.860000000000"
+  },
+  {
+    "sale_date": "2026-04-26",
+    "total_orders": 4,
+    "total_sales": "1049564.45",
+    "average_order_value": "262391.112500000000"
+  },
+  {
+    "sale_date": "2026-04-25",
+    "total_orders": 4,
+    "total_sales": "707392.30",
+    "average_order_value": "176848.075000000000"
+  },
+  {
+    "sale_date": "2026-04-24",
+    "total_orders": 4,
+    "total_sales": "804933.74",
+    "average_order_value": "201233.435000000000"
+  },
+  {
+    "sale_date": "2026-04-23",
+    "total_orders": 4,
+    "total_sales": "314319.59",
+    "average_order_value": "78579.897500000000"
+  },
+  {
+    "sale_date": "2026-04-22",
+    "total_orders": 4,
+    "total_sales": "492477.77",
+    "average_order_value": "123119.442500000000"
+  },
+  {
+    "sale_date": "2026-04-21",
+    "total_orders": 4,
+    "total_sales": "653760.62",
+    "average_order_value": "163440.155000000000"
+  },
+  {
+    "sale_date": "2026-04-20",
+    "total_orders": 4,
+    "total_sales": "624201.12",
+    "average_order_value": "156050.280000000000"
+  },
+  {
+    "sale_date": "2026-04-19",
+    "total_orders": 4,
+    "total_sales": "908913.05",
+    "average_order_value": "227228.262500000000"
+  },
+  {
+    "sale_date": "2026-04-18",
+    "total_orders": 4,
+    "total_sales": "1192479.29",
+    "average_order_value": "298119.822500000000"
+  },
+  {
+    "sale_date": "2026-04-17",
+    "total_orders": 4,
+    "total_sales": "867953.91",
+    "average_order_value": "216988.477500000000"
+  },
+  {
+    "sale_date": "2026-04-16",
+    "total_orders": 4,
+    "total_sales": "661301.81",
+    "average_order_value": "165325.452500000000"
+  },
+  {
+    "sale_date": "2026-04-15",
+    "total_orders": 4,
+    "total_sales": "780393.94",
+    "average_order_value": "195098.485000000000"
+  },
+  {
+    "sale_date": "2026-04-14",
+    "total_orders": 4,
+    "total_sales": "512250.05",
+    "average_order_value": "128062.512500000000"
+  },
+  {
+    "sale_date": "2026-04-13",
+    "total_orders": 4,
+    "total_sales": "589930.96",
+    "average_order_value": "147482.740000000000"
+  },
+  {
+    "sale_date": "2026-04-12",
+    "total_orders": 4,
+    "total_sales": "1488266.94",
+    "average_order_value": "372066.735000000000"
+  },
+  {
+    "sale_date": "2026-04-11",
+    "total_orders": 4,
+    "total_sales": "1050610.05",
+    "average_order_value": "262652.512500000000"
+  },
+  {
+    "sale_date": "2026-04-10",
+    "total_orders": 4,
+    "total_sales": "745742.30",
+    "average_order_value": "186435.575000000000"
+  },
+  {
+    "sale_date": "2026-04-09",
+    "total_orders": 4,
+    "total_sales": "1344642.26",
+    "average_order_value": "336160.565000000000"
+  },
+  {
+    "sale_date": "2026-04-08",
+    "total_orders": 4,
+    "total_sales": "794187.95",
+    "average_order_value": "198546.987500000000"
+  },
+  {
+    "sale_date": "2026-04-07",
+    "total_orders": 4,
+    "total_sales": "438740.57",
+    "average_order_value": "109685.142500000000"
+  },
+  {
+    "sale_date": "2026-04-06",
+    "total_orders": 4,
+    "total_sales": "606931.02",
+    "average_order_value": "151732.755000000000"
+  },
+  {
+    "sale_date": "2026-04-05",
+    "total_orders": 4,
+    "total_sales": "531887.12",
+    "average_order_value": "132971.780000000000"
+  },
+  {
+    "sale_date": "2026-04-04",
+    "total_orders": 4,
+    "total_sales": "775927.05",
+    "average_order_value": "193981.762500000000"
+  },
+  {
+    "sale_date": "2026-04-03",
+    "total_orders": 4,
+    "total_sales": "1119526.97",
+    "average_order_value": "279881.742500000000"
+  },
+  {
+    "sale_date": "2026-04-02",
+    "total_orders": 4,
+    "total_sales": "1215493.41",
+    "average_order_value": "303873.352500000000"
+  },
+  {
+    "sale_date": "2026-04-01",
+    "total_orders": 4,
+    "total_sales": "809657.43",
+    "average_order_value": "202414.357500000000"
+  },
+  {
+    "sale_date": "2026-03-31",
+    "total_orders": 4,
+    "total_sales": "921559.94",
+    "average_order_value": "230389.985000000000"
+  },
+  {
+    "sale_date": "2026-03-30",
+    "total_orders": 4,
+    "total_sales": "661656.93",
+    "average_order_value": "165414.232500000000"
+  },
+  {
+    "sale_date": "2026-03-29",
+    "total_orders": 4,
+    "total_sales": "582681.04",
+    "average_order_value": "145670.260000000000"
+  },
+  {
+    "sale_date": "2026-03-28",
+    "total_orders": 4,
+    "total_sales": "884990.64",
+    "average_order_value": "221247.660000000000"
+  },
+  {
+    "sale_date": "2026-03-27",
+    "total_orders": 4,
+    "total_sales": "698859.01",
+    "average_order_value": "174714.752500000000"
+  },
+  {
+    "sale_date": "2026-03-26",
+    "total_orders": 4,
+    "total_sales": "792352.30",
+    "average_order_value": "198088.075000000000"
+  },
+  {
+    "sale_date": "2026-03-25",
+    "total_orders": 4,
+    "total_sales": "1454731.54",
+    "average_order_value": "363682.885000000000"
+  },
+  {
+    "sale_date": "2026-03-24",
+    "total_orders": 4,
+    "total_sales": "964900.91",
+    "average_order_value": "241225.227500000000"
+  },
+  {
+    "sale_date": "2026-03-23",
+    "total_orders": 4,
+    "total_sales": "699249.17",
+    "average_order_value": "174812.292500000000"
+  },
+  {
+    "sale_date": "2026-03-22",
+    "total_orders": 5,
+    "total_sales": "958090.87",
+    "average_order_value": "191618.174000000000"
+  },
+  {
+    "sale_date": "2026-03-21",
+    "total_orders": 5,
+    "total_sales": "592887.22",
+    "average_order_value": "118577.444000000000"
+  },
+  {
+    "sale_date": "2026-03-20",
+    "total_orders": 5,
+    "total_sales": "500798.22",
+    "average_order_value": "100159.644000000000"
+  },
+  {
+    "sale_date": "2026-03-19",
+    "total_orders": 5,
+    "total_sales": "465430.57",
+    "average_order_value": "93086.114000000000"
+  },
+  {
+    "sale_date": "2026-03-18",
+    "total_orders": 5,
+    "total_sales": "1197479.47",
+    "average_order_value": "239495.894000000000"
+  },
+  {
+    "sale_date": "2026-03-17",
+    "total_orders": 4,
+    "total_sales": "911998.99",
+    "average_order_value": "227999.747500000000"
+  },
+  {
+    "sale_date": "2026-03-16",
+    "total_orders": 4,
+    "total_sales": "621842.30",
+    "average_order_value": "155460.575000000000"
+  },
+  {
+    "sale_date": "2026-03-15",
+    "total_orders": 4,
+    "total_sales": "1320589.14",
+    "average_order_value": "330147.285000000000"
+  },
+  {
+    "sale_date": "2026-03-14",
+    "total_orders": 4,
+    "total_sales": "881526.83",
+    "average_order_value": "220381.707500000000"
+  },
+  {
+    "sale_date": "2026-03-13",
+    "total_orders": 4,
+    "total_sales": "614455.67",
+    "average_order_value": "153613.917500000000"
+  },
+  {
+    "sale_date": "2026-03-12",
+    "total_orders": 4,
+    "total_sales": "335530.90",
+    "average_order_value": "83882.725000000000"
+  },
+  {
+    "sale_date": "2026-03-11",
+    "total_orders": 4,
+    "total_sales": "650595.12",
+    "average_order_value": "162648.780000000000"
+  },
+  {
+    "sale_date": "2026-03-10",
+    "total_orders": 4,
+    "total_sales": "428990.41",
+    "average_order_value": "107247.602500000000"
+  },
+  {
+    "sale_date": "2026-03-09",
+    "total_orders": 4,
+    "total_sales": "977134.01",
+    "average_order_value": "244283.502500000000"
+  },
+  {
+    "sale_date": "2026-03-08",
+    "total_orders": 4,
+    "total_sales": "1385466.51",
+    "average_order_value": "346366.627500000000"
+  },
+  {
+    "sale_date": "2026-03-07",
+    "total_orders": 4,
+    "total_sales": "1072473.05",
+    "average_order_value": "268118.262500000000"
+  },
+  {
+    "sale_date": "2026-03-06",
+    "total_orders": 4,
+    "total_sales": "947519.94",
+    "average_order_value": "236879.985000000000"
+  },
+  {
+    "sale_date": "2026-03-05",
+    "total_orders": 4,
+    "total_sales": "1074045.81",
+    "average_order_value": "268511.452500000000"
+  },
+  {
+    "sale_date": "2026-03-04",
+    "total_orders": 4,
+    "total_sales": "699812.56",
+    "average_order_value": "174953.140000000000"
+  },
+  {
+    "sale_date": "2026-03-03",
+    "total_orders": 4,
+    "total_sales": "807305.34",
+    "average_order_value": "201826.335000000000"
+  },
+  {
+    "sale_date": "2026-03-02",
+    "total_orders": 4,
+    "total_sales": "659469.31",
+    "average_order_value": "164867.327500000000"
+  },
+  {
+    "sale_date": "2026-03-01",
+    "total_orders": 4,
+    "total_sales": "571201.30",
+    "average_order_value": "142800.325000000000"
+  },
+  {
+    "sale_date": "2026-02-28",
+    "total_orders": 4,
+    "total_sales": "1151754.74",
+    "average_order_value": "287938.685000000000"
+  },
+  {
+    "sale_date": "2026-02-27",
+    "total_orders": 4,
+    "total_sales": "1031736.11",
+    "average_order_value": "257934.027500000000"
+  },
+  {
+    "sale_date": "2026-02-26",
+    "total_orders": 4,
+    "total_sales": "923444.57",
+    "average_order_value": "230861.142500000000"
+  },
+  {
+    "sale_date": "2026-02-25",
+    "total_orders": 4,
+    "total_sales": "916102.94",
+    "average_order_value": "229025.735000000000"
+  },
+  {
+    "sale_date": "2026-02-24",
+    "total_orders": 4,
+    "total_sales": "721768.12",
+    "average_order_value": "180442.030000000000"
+  },
+  {
+    "sale_date": "2026-02-23",
+    "total_orders": 4,
+    "total_sales": "572615.29",
+    "average_order_value": "143153.822500000000"
+  },
+  {
+    "sale_date": "2026-02-22",
+    "total_orders": 4,
+    "total_sales": "604768.37",
+    "average_order_value": "151192.092500000000"
+  },
+  {
+    "sale_date": "2026-02-21",
+    "total_orders": 4,
+    "total_sales": "1085338.11",
+    "average_order_value": "271334.527500000000"
+  },
+  {
+    "sale_date": "2026-02-20",
+    "total_orders": 4,
+    "total_sales": "844354.27",
+    "average_order_value": "211088.567500000000"
+  },
+  {
+    "sale_date": "2026-02-19",
+    "total_orders": 4,
+    "total_sales": "831289.94",
+    "average_order_value": "207822.485000000000"
+  },
+  {
+    "sale_date": "2026-02-18",
+    "total_orders": 4,
+    "total_sales": "1418884.29",
+    "average_order_value": "354721.072500000000"
+  },
+  {
+    "sale_date": "2026-02-17",
+    "total_orders": 4,
+    "total_sales": "836329.24",
+    "average_order_value": "209082.310000000000"
+  },
+  {
+    "sale_date": "2026-02-16",
+    "total_orders": 4,
+    "total_sales": "688733.04",
+    "average_order_value": "172183.260000000000"
+  },
+  {
+    "sale_date": "2026-02-15",
+    "total_orders": 4,
+    "total_sales": "191083.53",
+    "average_order_value": "47770.882500000000"
+  },
+  {
+    "sale_date": "2026-02-14",
+    "total_orders": 4,
+    "total_sales": "415304.30",
+    "average_order_value": "103826.075000000000"
+  },
+  {
+    "sale_date": "2026-02-13",
+    "total_orders": 4,
+    "total_sales": "447953.06",
+    "average_order_value": "111988.265000000000"
+  },
+  {
+    "sale_date": "2026-02-12",
+    "total_orders": 4,
+    "total_sales": "631970.99",
+    "average_order_value": "157992.747500000000"
+  },
+  {
+    "sale_date": "2026-02-11",
+    "total_orders": 4,
+    "total_sales": "1196803.37",
+    "average_order_value": "299200.842500000000"
+  },
+  {
+    "sale_date": "2026-02-10",
+    "total_orders": 4,
+    "total_sales": "1276209.56",
+    "average_order_value": "319052.390000000000"
+  },
+  {
+    "sale_date": "2026-02-09",
+    "total_orders": 4,
+    "total_sales": "772291.12",
+    "average_order_value": "193072.780000000000"
+  },
+  {
+    "sale_date": "2026-02-08",
+    "total_orders": 4,
+    "total_sales": "1077400.53",
+    "average_order_value": "269350.132500000000"
+  },
+  {
+    "sale_date": "2026-02-07",
+    "total_orders": 4,
+    "total_sales": "444817.01",
+    "average_order_value": "111204.252500000000"
+  },
+  {
+    "sale_date": "2026-02-06",
+    "total_orders": 4,
+    "total_sales": "445748.61",
+    "average_order_value": "111437.152500000000"
+  },
+  {
+    "sale_date": "2026-02-05",
+    "total_orders": 5,
+    "total_sales": "716810.34",
+    "average_order_value": "143362.068000000000"
+  },
+  {
+    "sale_date": "2026-02-04",
+    "total_orders": 5,
+    "total_sales": "425800.40",
+    "average_order_value": "85160.080000000000"
+  },
+  {
+    "sale_date": "2026-02-03",
+    "total_orders": 5,
+    "total_sales": "934346.91",
+    "average_order_value": "186869.382000000000"
+  },
+  {
+    "sale_date": "2026-02-02",
+    "total_orders": 5,
+    "total_sales": "1284686.95",
+    "average_order_value": "256937.390000000000"
+  },
+  {
+    "sale_date": "2026-02-01",
+    "total_orders": 5,
+    "total_sales": "1281492.03",
+    "average_order_value": "256298.406000000000"
+  },
+  {
+    "sale_date": "2026-01-31",
+    "total_orders": 4,
+    "total_sales": "972531.72",
+    "average_order_value": "243132.930000000000"
+  },
+  {
+    "sale_date": "2026-01-30",
+    "total_orders": 4,
+    "total_sales": "1068471.12",
+    "average_order_value": "267117.780000000000"
+  },
+  {
+    "sale_date": "2026-01-29",
+    "total_orders": 4,
+    "total_sales": "867034.73",
+    "average_order_value": "216758.682500000000"
+  },
+  {
+    "sale_date": "2026-01-28",
+    "total_orders": 4,
+    "total_sales": "811277.81",
+    "average_order_value": "202819.452500000000"
+  },
+  {
+    "sale_date": "2026-01-27",
+    "total_orders": 4,
+    "total_sales": "1135570.71",
+    "average_order_value": "283892.677500000000"
+  },
+  {
+    "sale_date": "2026-01-26",
+    "total_orders": 4,
+    "total_sales": "749794.85",
+    "average_order_value": "187448.712500000000"
+  },
+  {
+    "sale_date": "2026-01-25",
+    "total_orders": 4,
+    "total_sales": "909169.94",
+    "average_order_value": "227292.485000000000"
+  },
+  {
+    "sale_date": "2026-01-24",
+    "total_orders": 4,
+    "total_sales": "1140191.89",
+    "average_order_value": "285047.972500000000"
+  },
+  {
+    "sale_date": "2026-01-23",
+    "total_orders": 4,
+    "total_sales": "983366.68",
+    "average_order_value": "245841.670000000000"
+  },
+  {
+    "sale_date": "2026-01-22",
+    "total_orders": 4,
+    "total_sales": "847509.24",
+    "average_order_value": "211877.310000000000"
+  },
+  {
+    "sale_date": "2026-01-21",
+    "total_orders": 4,
+    "total_sales": "506436.29",
+    "average_order_value": "126609.072500000000"
+  },
+  {
+    "sale_date": "2026-01-20",
+    "total_orders": 4,
+    "total_sales": "563158.30",
+    "average_order_value": "140789.575000000000"
+  },
+  {
+    "sale_date": "2026-01-19",
+    "total_orders": 4,
+    "total_sales": "588918.22",
+    "average_order_value": "147229.555000000000"
+  },
+  {
+    "sale_date": "2026-01-18",
+    "total_orders": 4,
+    "total_sales": "588117.35",
+    "average_order_value": "147029.337500000000"
+  },
+  {
+    "sale_date": "2026-01-17",
+    "total_orders": 4,
+    "total_sales": "1269231.77",
+    "average_order_value": "317307.942500000000"
+  },
+  {
+    "sale_date": "2026-01-16",
+    "total_orders": 4,
+    "total_sales": "1113332.98",
+    "average_order_value": "278333.245000000000"
+  },
+  {
+    "sale_date": "2026-01-15",
+    "total_orders": 4,
+    "total_sales": "876721.12",
+    "average_order_value": "219180.280000000000"
+  },
+  {
+    "sale_date": "2026-01-14",
+    "total_orders": 4,
+    "total_sales": "1137764.61",
+    "average_order_value": "284441.152500000000"
+  },
+  {
+    "sale_date": "2026-01-13",
+    "total_orders": 4,
+    "total_sales": "757030.97",
+    "average_order_value": "189257.742500000000"
+  },
+  {
+    "sale_date": "2026-01-12",
+    "total_orders": 4,
+    "total_sales": "362321.31",
+    "average_order_value": "90580.327500000000"
+  },
+  {
+    "sale_date": "2026-01-11",
+    "total_orders": 4,
+    "total_sales": "355922.53",
+    "average_order_value": "88980.632500000000"
+  },
+  {
+    "sale_date": "2026-01-10",
+    "total_orders": 4,
+    "total_sales": "373411.94",
+    "average_order_value": "93352.985000000000"
+  },
+  {
+    "sale_date": "2026-01-09",
+    "total_orders": 4,
+    "total_sales": "927414.29",
+    "average_order_value": "231853.572500000000"
+  },
+  {
+    "sale_date": "2026-01-08",
+    "total_orders": 4,
+    "total_sales": "831344.92",
+    "average_order_value": "207836.230000000000"
+  },
+  {
+    "sale_date": "2026-01-07",
+    "total_orders": 4,
+    "total_sales": "1374367.44",
+    "average_order_value": "343591.860000000000"
+  },
+  {
+    "sale_date": "2026-01-06",
+    "total_orders": 4,
+    "total_sales": "1049564.45",
+    "average_order_value": "262391.112500000000"
+  },
+  {
+    "sale_date": "2026-01-05",
+    "total_orders": 4,
+    "total_sales": "707392.30",
+    "average_order_value": "176848.075000000000"
+  },
+  {
+    "sale_date": "2026-01-04",
+    "total_orders": 4,
+    "total_sales": "804933.74",
+    "average_order_value": "201233.435000000000"
+  },
+  {
+    "sale_date": "2026-01-03",
+    "total_orders": 4,
+    "total_sales": "314319.59",
+    "average_order_value": "78579.897500000000"
+  },
+  {
+    "sale_date": "2026-01-02",
+    "total_orders": 4,
+    "total_sales": "492477.77",
+    "average_order_value": "123119.442500000000"
+  },
+  {
+    "sale_date": "2026-01-01",
+    "total_orders": 4,
+    "total_sales": "653760.62",
+    "average_order_value": "163440.155000000000"
+  },
+  {
+    "sale_date": "2025-12-31",
+    "total_orders": 4,
+    "total_sales": "624201.12",
+    "average_order_value": "156050.280000000000"
+  },
+  {
+    "sale_date": "2025-12-30",
+    "total_orders": 4,
+    "total_sales": "908913.05",
+    "average_order_value": "227228.262500000000"
+  },
+  {
+    "sale_date": "2025-12-29",
+    "total_orders": 4,
+    "total_sales": "1192479.29",
+    "average_order_value": "298119.822500000000"
+  },
+  {
+    "sale_date": "2025-12-28",
+    "total_orders": 4,
+    "total_sales": "867953.91",
+    "average_order_value": "216988.477500000000"
+  },
+  {
+    "sale_date": "2025-12-27",
+    "total_orders": 4,
+    "total_sales": "661301.81",
+    "average_order_value": "165325.452500000000"
+  },
+  {
+    "sale_date": "2025-12-26",
+    "total_orders": 4,
+    "total_sales": "780393.94",
+    "average_order_value": "195098.485000000000"
+  },
+  {
+    "sale_date": "2025-12-25",
+    "total_orders": 4,
+    "total_sales": "512250.05",
+    "average_order_value": "128062.512500000000"
+  },
+  {
+    "sale_date": "2025-12-24",
+    "total_orders": 4,
+    "total_sales": "589930.96",
+    "average_order_value": "147482.740000000000"
+  },
+  {
+    "sale_date": "2025-12-23",
+    "total_orders": 4,
+    "total_sales": "1488266.94",
+    "average_order_value": "372066.735000000000"
+  },
+  {
+    "sale_date": "2025-12-22",
+    "total_orders": 4,
+    "total_sales": "1050610.05",
+    "average_order_value": "262652.512500000000"
+  },
+  {
+    "sale_date": "2025-12-21",
+    "total_orders": 5,
+    "total_sales": "895007.58",
+    "average_order_value": "179001.516000000000"
+  },
+  {
+    "sale_date": "2025-12-20",
+    "total_orders": 5,
+    "total_sales": "1515785.99",
+    "average_order_value": "303157.198000000000"
+  },
+  {
+    "sale_date": "2025-12-19",
+    "total_orders": 5,
+    "total_sales": "1281286.28",
+    "average_order_value": "256257.256000000000"
+  },
+  {
+    "sale_date": "2025-12-18",
+    "total_orders": 5,
+    "total_sales": "695739.90",
+    "average_order_value": "139147.980000000000"
+  },
+  {
+    "sale_date": "2025-12-17",
+    "total_orders": 5,
+    "total_sales": "624538.97",
+    "average_order_value": "124907.794000000000"
+  },
+  {
+    "sale_date": "2025-12-16",
+    "total_orders": 4,
+    "total_sales": "698265.94",
+    "average_order_value": "174566.485000000000"
+  },
+  {
+    "sale_date": "2025-12-15",
+    "total_orders": 4,
+    "total_sales": "610890.97",
+    "average_order_value": "152722.742500000000"
+  },
+  {
+    "sale_date": "2025-12-14",
+    "total_orders": 4,
+    "total_sales": "805743.64",
+    "average_order_value": "201435.910000000000"
+  },
+  {
+    "sale_date": "2025-12-13",
+    "total_orders": 4,
+    "total_sales": "1311284.64",
+    "average_order_value": "327821.160000000000"
+  },
+  {
+    "sale_date": "2025-12-12",
+    "total_orders": 4,
+    "total_sales": "1098797.71",
+    "average_order_value": "274699.427500000000"
+  },
+  {
+    "sale_date": "2025-12-11",
+    "total_orders": 4,
+    "total_sales": "818312.30",
+    "average_order_value": "204578.075000000000"
+  },
+  {
+    "sale_date": "2025-12-10",
+    "total_orders": 4,
+    "total_sales": "1094975.50",
+    "average_order_value": "273743.875000000000"
+  },
+  {
+    "sale_date": "2025-12-09",
+    "total_orders": 4,
+    "total_sales": "486165.35",
+    "average_order_value": "121541.337500000000"
+  },
+  {
+    "sale_date": "2025-12-08",
+    "total_orders": 4,
+    "total_sales": "615138.77",
+    "average_order_value": "153784.692500000000"
+  },
+  {
+    "sale_date": "2025-12-07",
+    "total_orders": 4,
+    "total_sales": "421963.66",
+    "average_order_value": "105490.915000000000"
+  },
+  {
+    "sale_date": "2025-12-06",
+    "total_orders": 4,
+    "total_sales": "589490.12",
+    "average_order_value": "147372.530000000000"
+  },
+  {
+    "sale_date": "2025-12-05",
+    "total_orders": 4,
+    "total_sales": "1152913.45",
+    "average_order_value": "288228.362500000000"
+  },
+  {
+    "sale_date": "2025-12-04",
+    "total_orders": 4,
+    "total_sales": "1023918.65",
+    "average_order_value": "255979.662500000000"
+  },
+  {
+    "sale_date": "2025-12-03",
+    "total_orders": 4,
+    "total_sales": "1164191.61",
+    "average_order_value": "291047.902500000000"
+  },
+  {
+    "sale_date": "2025-12-02",
+    "total_orders": 4,
+    "total_sales": "928237.99",
+    "average_order_value": "232059.497500000000"
+  },
+  {
+    "sale_date": "2025-12-01",
+    "total_orders": 4,
+    "total_sales": "583352.94",
+    "average_order_value": "145838.235000000000"
+  },
+  {
+    "sale_date": "2025-11-30",
+    "total_orders": 4,
+    "total_sales": "363190.09",
+    "average_order_value": "90797.522500000000"
+  },
+  {
+    "sale_date": "2025-11-29",
+    "total_orders": 4,
+    "total_sales": "329613.52",
+    "average_order_value": "82403.380000000000"
+  },
+  {
+    "sale_date": "2025-11-28",
+    "total_orders": 4,
+    "total_sales": "649598.34",
+    "average_order_value": "162399.585000000000"
+  },
+  {
+    "sale_date": "2025-11-27",
+    "total_orders": 4,
+    "total_sales": "911998.99",
+    "average_order_value": "227999.747500000000"
+  },
+  {
+    "sale_date": "2025-11-26",
+    "total_orders": 4,
+    "total_sales": "621842.30",
+    "average_order_value": "155460.575000000000"
+  },
+  {
+    "sale_date": "2025-11-25",
+    "total_orders": 4,
+    "total_sales": "1320589.14",
+    "average_order_value": "330147.285000000000"
+  },
+  {
+    "sale_date": "2025-11-24",
+    "total_orders": 4,
+    "total_sales": "881526.83",
+    "average_order_value": "220381.707500000000"
+  },
+  {
+    "sale_date": "2025-11-23",
+    "total_orders": 4,
+    "total_sales": "614455.67",
+    "average_order_value": "153613.917500000000"
+  },
+  {
+    "sale_date": "2025-11-22",
+    "total_orders": 4,
+    "total_sales": "335530.90",
+    "average_order_value": "83882.725000000000"
+  },
+  {
+    "sale_date": "2025-11-21",
+    "total_orders": 4,
+    "total_sales": "650595.12",
+    "average_order_value": "162648.780000000000"
+  },
+  {
+    "sale_date": "2025-11-20",
+    "total_orders": 4,
+    "total_sales": "428990.41",
+    "average_order_value": "107247.602500000000"
+  },
+  {
+    "sale_date": "2025-11-19",
+    "total_orders": 4,
+    "total_sales": "977134.01",
+    "average_order_value": "244283.502500000000"
+  },
+  {
+    "sale_date": "2025-11-18",
+    "total_orders": 4,
+    "total_sales": "1385466.51",
+    "average_order_value": "346366.627500000000"
+  },
+  {
+    "sale_date": "2025-11-17",
+    "total_orders": 4,
+    "total_sales": "1072473.05",
+    "average_order_value": "268118.262500000000"
+  },
+  {
+    "sale_date": "2025-11-16",
+    "total_orders": 4,
+    "total_sales": "947519.94",
+    "average_order_value": "236879.985000000000"
+  },
+  {
+    "sale_date": "2025-11-15",
+    "total_orders": 4,
+    "total_sales": "1074045.81",
+    "average_order_value": "268511.452500000000"
+  },
+  {
+    "sale_date": "2025-11-14",
+    "total_orders": 4,
+    "total_sales": "699812.56",
+    "average_order_value": "174953.140000000000"
+  },
+  {
+    "sale_date": "2025-11-13",
+    "total_orders": 4,
+    "total_sales": "807305.34",
+    "average_order_value": "201826.335000000000"
+  },
+  {
+    "sale_date": "2025-11-12",
+    "total_orders": 4,
+    "total_sales": "659469.31",
+    "average_order_value": "164867.327500000000"
+  },
+  {
+    "sale_date": "2025-11-11",
+    "total_orders": 4,
+    "total_sales": "571201.30",
+    "average_order_value": "142800.325000000000"
+  },
+  {
+    "sale_date": "2025-11-10",
+    "total_orders": 4,
+    "total_sales": "1151754.74",
+    "average_order_value": "287938.685000000000"
+  },
+  {
+    "sale_date": "2025-11-09",
+    "total_orders": 4,
+    "total_sales": "1031736.11",
+    "average_order_value": "257934.027500000000"
+  },
+  {
+    "sale_date": "2025-11-08",
+    "total_orders": 4,
+    "total_sales": "923444.57",
+    "average_order_value": "230861.142500000000"
+  },
+  {
+    "sale_date": "2025-11-07",
+    "total_orders": 4,
+    "total_sales": "916102.94",
+    "average_order_value": "229025.735000000000"
+  },
+  {
+    "sale_date": "2025-11-06",
+    "total_orders": 5,
+    "total_sales": "971922.22",
+    "average_order_value": "194384.444000000000"
+  },
+  {
+    "sale_date": "2025-11-05",
+    "total_orders": 5,
+    "total_sales": "753009.06",
+    "average_order_value": "150601.812000000000"
+  },
+  {
+    "sale_date": "2025-11-04",
+    "total_orders": 5,
+    "total_sales": "775251.37",
+    "average_order_value": "155050.274000000000"
+  },
+  {
+    "sale_date": "2025-11-03",
+    "total_orders": 5,
+    "total_sales": "1273412.47",
+    "average_order_value": "254682.494000000000"
+  },
+  {
+    "sale_date": "2025-11-02",
+    "total_orders": 5,
+    "total_sales": "849942.78",
+    "average_order_value": "169988.556000000000"
+  },
+  {
+    "sale_date": "2025-11-01",
+    "total_orders": 4,
+    "total_sales": "792352.30",
+    "average_order_value": "198088.075000000000"
+  }
+]
+
+Testing: getInventoryValuation
+Status: PASSED
+Response: {
+  "summary": {
+    "total_products": 50,
+    "total_units": 687,
+    "total_cost_value": "17462440.00",
+    "total_selling_value": "21810713.00"
+  },
+  "products": [
+    {
+      "product_id": "88409d49-40c8-47d4-8c6c-17062d4b0a26",
+      "product_name": "LG 55 inch OLED TV",
+      "sku": "TV004",
+      "brand": "LG",
+      "quantity_on_hand": 13,
+      "unit_cost": "108000.00",
+      "unit_price": "129999.00",
+      "total_cost_value": "1404000.00",
+      "total_selling_value": "1689987.00"
+    },
+    {
+      "product_id": "310d7a42-afe3-4172-9c58-72ac7581f7bc",
+      "product_name": "Apple MacBook Air",
+      "sku": "LAP007",
+      "brand": "Apple",
+      "quantity_on_hand": 13,
+      "unit_cost": "92000.00",
+      "unit_price": "109999.00",
+      "total_cost_value": "1196000.00",
+      "total_selling_value": "1429987.00"
+    },
+    {
+      "product_id": "f0d8ae37-0d8f-4323-b552-f380731d92d7",
+      "product_name": "iPhone 17",
+      "sku": "MOB003",
+      "brand": "Apple",
+      "quantity_on_hand": 15,
+      "unit_cost": "76000.00",
+      "unit_price": "89999.00",
+      "total_cost_value": "1140000.00",
+      "total_selling_value": "1349985.00"
+    },
+    {
+      "product_id": "a600fcec-4c61-4da1-9823-bdb964d87d3b",
+      "product_name": "Lenovo ThinkPad E14",
+      "sku": "LAP006",
+      "brand": "Lenovo",
+      "quantity_on_hand": 15,
+      "unit_cost": "70000.00",
+      "unit_price": "84999.00",
+      "total_cost_value": "1050000.00",
+      "total_selling_value": "1274985.00"
+    },
+    {
+      "product_id": "5a447ed7-5fb5-4e6c-a70a-fc93f2975659",
+      "product_name": "Samsung Galaxy S26",
+      "sku": "MOB001",
+      "brand": "Samsung",
+      "quantity_on_hand": 15,
+      "unit_cost": "65000.00",
+      "unit_price": "79999.00",
+      "total_cost_value": "975000.00",
+      "total_selling_value": "1199985.00"
+    },
+    {
+      "product_id": "3a69730b-5b10-4d78-9a29-002c8d1027b7",
+      "product_name": "Sony Alpha A6400",
+      "sku": "CAM002",
+      "brand": "Sony",
+      "quantity_on_hand": 13,
+      "unit_cost": "73000.00",
+      "unit_price": "89999.00",
+      "total_cost_value": "949000.00",
+      "total_selling_value": "1169987.00"
+    },
+    {
+      "product_id": "16158e82-32c6-47e8-9a10-a14e842ff641",
+      "product_name": "Nikon Z50",
+      "sku": "CAM003",
+      "brand": "Nikon",
+      "quantity_on_hand": 13,
+      "unit_cost": "65000.00",
+      "unit_price": "79999.00",
+      "total_cost_value": "845000.00",
+      "total_selling_value": "1039987.00"
+    },
+    {
+      "product_id": "d1bc5452-2ca6-4819-8859-bd658639e63f",
+      "product_name": "Samsung 55 inch QLED TV",
+      "sku": "TV002",
+      "brand": "Samsung",
+      "quantity_on_hand": 13,
+      "unit_cost": "65000.00",
+      "unit_price": "79999.00",
+      "total_cost_value": "845000.00",
+      "total_selling_value": "1039987.00"
+    },
+    {
+      "product_id": "e6627828-45d4-4340-acb2-4c0a5362ce78",
+      "product_name": "Lenovo IdeaPad Slim 5",
+      "sku": "LAP005",
+      "brand": "Lenovo",
+      "quantity_on_hand": 15,
+      "unit_cost": "56000.00",
+      "unit_price": "69999.00",
+      "total_cost_value": "840000.00",
+      "total_selling_value": "1049985.00"
+    },
+    {
+      "product_id": "e4f089ea-2807-47a5-b3a7-582ca463524d",
+      "product_name": "Dell Inspiron 15",
+      "sku": "LAP001",
+      "brand": "Dell",
+      "quantity_on_hand": 15,
+      "unit_cost": "54000.00",
+      "unit_price": "65999.00",
+      "total_cost_value": "810000.00",
+      "total_selling_value": "989985.00"
+    },
+    {
+      "product_id": "81c69f10-8054-44a2-b8c9-2768858daa5d",
+      "product_name": "Google Pixel 11",
+      "sku": "MOB008",
+      "brand": "Google",
+      "quantity_on_hand": 13,
+      "unit_cost": "61000.00",
+      "unit_price": "74999.00",
+      "total_cost_value": "793000.00",
+      "total_selling_value": "974987.00"
+    },
+    {
+      "product_id": "f9ba684d-5c14-4edc-951b-00678ea544ed",
+      "product_name": "Sony Bravia 50 inch",
+      "sku": "TV005",
+      "brand": "Sony",
+      "quantity_on_hand": 13,
+      "unit_cost": "61000.00",
+      "unit_price": "74999.00",
+      "total_cost_value": "793000.00",
+      "total_selling_value": "974987.00"
+    },
+    {
+      "product_id": "7daaa860-8423-43f0-84cc-86f329941235",
+      "product_name": "Canon EOS R50",
+      "sku": "CAM001",
+      "brand": "Canon",
+      "quantity_on_hand": 13,
+      "unit_cost": "60000.00",
+      "unit_price": "74999.00",
+      "total_cost_value": "780000.00",
+      "total_selling_value": "974987.00"
+    },
+    {
+      "product_id": "00be58dd-90fa-4b15-93fa-83c1f2f59641",
+      "product_name": "Asus Vivobook 16",
+      "sku": "LAP008",
+      "brand": "Asus",
+      "quantity_on_hand": 15,
+      "unit_cost": "46000.00",
+      "unit_price": "57999.00",
+      "total_cost_value": "690000.00",
+      "total_selling_value": "869985.00"
+    },
+    {
+      "product_id": "4fb021cf-2872-4cb8-9f9b-a8e1e0515dcd",
+      "product_name": "Samsung 43 inch Smart TV",
+      "sku": "TV001",
+      "brand": "Samsung",
+      "quantity_on_hand": 15,
+      "unit_cost": "34000.00",
+      "unit_price": "42999.00",
+      "total_cost_value": "510000.00",
+      "total_selling_value": "644985.00"
+    },
+    {
+      "product_id": "75c9fbc5-2606-4c9e-9edd-24bd37c15d8e",
+      "product_name": "LG 43 inch LED TV",
+      "sku": "TV003",
+      "brand": "LG",
+      "quantity_on_hand": 15,
+      "unit_cost": "32000.00",
+      "unit_price": "39999.00",
+      "total_cost_value": "480000.00",
+      "total_selling_value": "599985.00"
+    },
+    {
+      "product_id": "4c073ba3-2d96-4a67-b5ae-07bc90c704c5",
+      "product_name": "Samsung Galaxy A56",
+      "sku": "MOB002",
+      "brand": "Samsung",
+      "quantity_on_hand": 15,
+      "unit_cost": "32000.00",
+      "unit_price": "39999.00",
+      "total_cost_value": "480000.00",
+      "total_selling_value": "599985.00"
+    },
+    {
+      "product_id": "1021c703-1236-4598-a027-85be362cf6ad",
+      "product_name": "GoPro Hero",
+      "sku": "CAM005",
+      "brand": "GoPro",
+      "quantity_on_hand": 15,
+      "unit_cost": "31000.00",
+      "unit_price": "39999.00",
+      "total_cost_value": "465000.00",
+      "total_selling_value": "599985.00"
+    },
+    {
+      "product_id": "e63e7c30-107c-4fbb-bf76-cd4bb5e8c450",
+      "product_name": "Sony Wireless Headphones",
+      "sku": "AUD001",
+      "brand": "Sony",
+      "quantity_on_hand": 20,
+      "unit_cost": "18500.00",
+      "unit_price": "24999.00",
+      "total_cost_value": "370000.00",
+      "total_selling_value": "499980.00"
+    },
+    {
+      "product_id": "caa2e7df-ee46-4a1e-b2b3-3bc83c6099a1",
+      "product_name": "Redmi Note 15",
+      "sku": "MOB007",
+      "brand": "Xiaomi",
+      "quantity_on_hand": 20,
+      "unit_cost": "14500.00",
+      "unit_price": "18999.00",
+      "total_cost_value": "290000.00",
+      "total_selling_value": "379980.00"
+    },
+    {
+      "product_id": "f254157f-0710-454c-b0be-544484a8fcc0",
+      "product_name": "JBL Party Speaker",
+      "sku": "AUD006",
+      "brand": "JBL",
+      "quantity_on_hand": 15,
+      "unit_cost": "14000.00",
+      "unit_price": "18999.00",
+      "total_cost_value": "210000.00",
+      "total_selling_value": "284985.00"
+    },
+    {
+      "product_id": "96758ede-4021-4eff-a5fc-db3ac2fc2e2a",
+      "product_name": "OnePlus 14",
+      "sku": "MOB005",
+      "brand": "OnePlus",
+      "quantity_on_hand": 3,
+      "unit_cost": "57000.00",
+      "unit_price": "69999.00",
+      "total_cost_value": "171000.00",
+      "total_selling_value": "209997.00"
+    },
+    {
+      "product_id": "7000b92c-2aba-4d05-a0fc-92bb5257f632",
+      "product_name": "Crucial 2TB SSD",
+      "sku": "STR004",
+      "brand": "Crucial",
+      "quantity_on_hand": 15,
+      "unit_cost": "10500.00",
+      "unit_price": "13999.00",
+      "total_cost_value": "157500.00",
+      "total_selling_value": "209985.00"
+    },
+    {
+      "product_id": "b6c6f00a-9d05-4e45-803f-12d326062d3c",
+      "product_name": "HP Pavilion 15",
+      "sku": "LAP003",
+      "brand": "HP",
+      "quantity_on_hand": 3,
+      "unit_cost": "51000.00",
+      "unit_price": "62999.00",
+      "total_cost_value": "153000.00",
+      "total_selling_value": "188997.00"
+    },
+    {
+      "product_id": "cc319406-4911-4687-a8ab-39f4f5b35ce7",
+      "product_name": "Netgear Mesh WiFi",
+      "sku": "NET003",
+      "brand": "Netgear",
+      "quantity_on_hand": 15,
+      "unit_cost": "9500.00",
+      "unit_price": "12999.00",
+      "total_cost_value": "142500.00",
+      "total_selling_value": "194985.00"
+    },
+    {
+      "product_id": "d0b635aa-373a-41e3-94c9-d79073c482ed",
+      "product_name": "JBL Bluetooth Speaker",
+      "sku": "AUD002",
+      "brand": "JBL",
+      "quantity_on_hand": 20,
+      "unit_cost": "6500.00",
+      "unit_price": "9999.00",
+      "total_cost_value": "130000.00",
+      "total_selling_value": "199980.00"
+    },
+    {
+      "product_id": "7542576e-7f55-45fe-8b92-f50a3d96e41e",
+      "product_name": "HP Spectre x360",
+      "sku": "LAP004",
+      "brand": "HP",
+      "quantity_on_hand": 1,
+      "unit_cost": "115000.00",
+      "unit_price": "139999.00",
+      "total_cost_value": "115000.00",
+      "total_selling_value": "139999.00"
+    },
+    {
+      "product_id": "3f05d4b6-4569-4aab-baaf-cd2cd7b26ba0",
+      "product_name": "Seagate 4TB HDD",
+      "sku": "STR005",
+      "brand": "Seagate",
+      "quantity_on_hand": 15,
+      "unit_cost": "7500.00",
+      "unit_price": "9999.00",
+      "total_cost_value": "112500.00",
+      "total_selling_value": "149985.00"
+    },
+    {
+      "product_id": "10241412-0dcf-47eb-ad6e-31b1c041b8e5",
+      "product_name": "Logitech C920 Webcam",
+      "sku": "CAM004",
+      "brand": "Logitech",
+      "quantity_on_hand": 20,
+      "unit_cost": "4500.00",
+      "unit_price": "6999.00",
+      "total_cost_value": "90000.00",
+      "total_selling_value": "139980.00"
+    },
+    {
+      "product_id": "607674f3-314d-44ee-ab53-0c468582483a",
+      "product_name": "OnePlus Nord 6",
+      "sku": "MOB006",
+      "brand": "OnePlus",
+      "quantity_on_hand": 3,
+      "unit_cost": "26000.00",
+      "unit_price": "32999.00",
+      "total_cost_value": "78000.00",
+      "total_selling_value": "98997.00"
+    },
+    {
+      "product_id": "66c1a5a5-83af-4947-83f9-f1d88500c096",
+      "product_name": "Apple AirPods Pro",
+      "sku": "AUD005",
+      "brand": "Apple",
+      "quantity_on_hand": 3,
+      "unit_cost": "19500.00",
+      "unit_price": "24999.00",
+      "total_cost_value": "58500.00",
+      "total_selling_value": "74997.00"
+    },
+    {
+      "product_id": "e3126681-b6cc-471a-b9b9-d0d8ab936c61",
+      "product_name": "TP Link WiFi 6 Router",
+      "sku": "NET001",
+      "brand": "TP-Link",
+      "quantity_on_hand": 20,
+      "unit_cost": "2600.00",
+      "unit_price": "3999.00",
+      "total_cost_value": "52000.00",
+      "total_selling_value": "79980.00"
+    },
+    {
+      "product_id": "b450e0b6-3d43-44a4-9c65-fb2b846d801c",
+      "product_name": "Mechanical Keyboard",
+      "sku": "ACC003",
+      "brand": "Redragon",
+      "quantity_on_hand": 20,
+      "unit_cost": "2200.00",
+      "unit_price": "3499.00",
+      "total_cost_value": "44000.00",
+      "total_selling_value": "69980.00"
+    },
+    {
+      "product_id": "d5b9003e-4feb-4d19-820a-4f05f933fcf7",
+      "product_name": "D Link Gigabit Router",
+      "sku": "NET002",
+      "brand": "D-Link",
+      "quantity_on_hand": 20,
+      "unit_cost": "1900.00",
+      "unit_price": "2999.00",
+      "total_cost_value": "38000.00",
+      "total_selling_value": "59980.00"
+    },
+    {
+      "product_id": "37299ff5-73c3-43d1-8ebe-bbbde827a8bc",
+      "product_name": "WD 2TB External HDD",
+      "sku": "STR002",
+      "brand": "Western Digital",
+      "quantity_on_hand": 8,
+      "unit_cost": "4700.00",
+      "unit_price": "6499.00",
+      "total_cost_value": "37600.00",
+      "total_selling_value": "51992.00"
+    },
+    {
+      "product_id": "36eb68a0-28b4-4c01-ab38-c61de64972aa",
+      "product_name": "65W Fast Charger",
+      "sku": "ACC005",
+      "brand": "Anker",
+      "quantity_on_hand": 20,
+      "unit_cost": "1600.00",
+      "unit_price": "2499.00",
+      "total_cost_value": "32000.00",
+      "total_selling_value": "49980.00"
+    },
+    {
+      "product_id": "1c99cb6e-50b1-4fc5-ada6-400b5ee1a700",
+      "product_name": "TP Link 8 Port Switch",
+      "sku": "NET004",
+      "brand": "TP-Link",
+      "quantity_on_hand": 20,
+      "unit_cost": "1500.00",
+      "unit_price": "2499.00",
+      "total_cost_value": "30000.00",
+      "total_selling_value": "49980.00"
+    },
+    {
+      "product_id": "7e55fa50-6c66-46df-b0a4-68e0e5bae3d3",
+      "product_name": "Boat Airdopes",
+      "sku": "AUD004",
+      "brand": "Boat",
+      "quantity_on_hand": 18,
+      "unit_cost": "1400.00",
+      "unit_price": "2499.00",
+      "total_cost_value": "25200.00",
+      "total_selling_value": "44982.00"
+    },
+    {
+      "product_id": "f4f3f1e4-d9c1-47b6-af37-2a1acc634e63",
+      "product_name": "Laptop Backpack",
+      "sku": "ACC007",
+      "brand": "HP",
+      "quantity_on_hand": 20,
+      "unit_cost": "1100.00",
+      "unit_price": "1999.00",
+      "total_cost_value": "22000.00",
+      "total_selling_value": "39980.00"
+    },
+    {
+      "product_id": "0e9a6a6f-c71b-4a16-9f00-c6d2b455d07a",
+      "product_name": "Laptop Cooling Pad",
+      "sku": "ACC004",
+      "brand": "Zebronics",
+      "quantity_on_hand": 20,
+      "unit_cost": "750.00",
+      "unit_price": "1299.00",
+      "total_cost_value": "15000.00",
+      "total_selling_value": "25980.00"
+    },
+    {
+      "product_id": "8c46e6bf-1c65-4a95-9c50-7be91a60f552",
+      "product_name": "TP Link WiFi Adapter",
+      "sku": "NET005",
+      "brand": "TP-Link",
+      "quantity_on_hand": 20,
+      "unit_cost": "700.00",
+      "unit_price": "1299.00",
+      "total_cost_value": "14000.00",
+      "total_selling_value": "25980.00"
+    },
+    {
+      "product_id": "3ec0c355-ac08-4896-9426-8c6d89f4fe34",
+      "product_name": "Wireless Mouse",
+      "sku": "ACC002",
+      "brand": "Logitech",
+      "quantity_on_hand": 18,
+      "unit_cost": "500.00",
+      "unit_price": "899.00",
+      "total_cost_value": "9000.00",
+      "total_selling_value": "16182.00"
+    },
+    {
+      "product_id": "2f2bba5d-3ff9-4ad4-823b-da9c1e29dd71",
+      "product_name": "SanDisk 128GB Pen Drive",
+      "sku": "STR003",
+      "brand": "SanDisk",
+      "quantity_on_hand": 18,
+      "unit_cost": "450.00",
+      "unit_price": "899.00",
+      "total_cost_value": "8100.00",
+      "total_selling_value": "16182.00"
+    },
+    {
+      "product_id": "b436035a-373b-4eb8-bf41-904bacb2e1fc",
+      "product_name": "HDMI Cable",
+      "sku": "ACC006",
+      "brand": "Amazon Basics",
+      "quantity_on_hand": 30,
+      "unit_cost": "250.00",
+      "unit_price": "599.00",
+      "total_cost_value": "7500.00",
+      "total_selling_value": "17970.00"
+    },
+    {
+      "product_id": "150e3c9e-c5cd-4165-883a-f89dbdf6e829",
+      "product_name": "USB C Cable",
+      "sku": "ACC001",
+      "brand": "Portronics",
+      "quantity_on_hand": 28,
+      "unit_cost": "180.00",
+      "unit_price": "499.00",
+      "total_cost_value": "5040.00",
+      "total_selling_value": "13972.00"
+    },
+    {
+      "product_id": "7cd68af6-b16b-4ecf-8286-3bff936cd7ea",
+      "product_name": "iPhone 17 Pro",
+      "sku": "MOB004",
+      "brand": "Apple",
+      "quantity_on_hand": 0,
+      "unit_cost": "110000.00",
+      "unit_price": "129999.00",
+      "total_cost_value": "0.00",
+      "total_selling_value": "0.00"
+    },
+    {
+      "product_id": "3ba8b498-9b18-4629-9810-42b196bb2beb",
+      "product_name": "Dell XPS 14",
+      "sku": "LAP002",
+      "brand": "Dell",
+      "quantity_on_hand": 0,
+      "unit_cost": "125000.00",
+      "unit_price": "149999.00",
+      "total_cost_value": "0.00",
+      "total_selling_value": "0.00"
+    },
+    {
+      "product_id": "f2b6045f-4753-4bd2-ba26-1002b97740b5",
+      "product_name": "Samsung 1TB SSD",
+      "sku": "STR001",
+      "brand": "Samsung",
+      "quantity_on_hand": 0,
+      "unit_cost": "6500.00",
+      "unit_price": "8999.00",
+      "total_cost_value": "0.00",
+      "total_selling_value": "0.00"
+    },
+    {
+      "product_id": "9b67c7b0-8407-4e8a-a7da-adaefd9dbea3",
+      "product_name": "TCL 43 inch Smart TV",
+      "sku": "TV006",
+      "brand": "TCL",
+      "quantity_on_hand": 0,
+      "unit_cost": "26000.00",
+      "unit_price": "32999.00",
+      "total_cost_value": "0.00",
+      "total_selling_value": "0.00"
+    },
+    {
+      "product_id": "40cbddcc-2b95-4f1c-92ce-462b5faeebd6",
+      "product_name": "Bose Soundbar",
+      "sku": "AUD003",
+      "brand": "Bose",
+      "quantity_on_hand": 0,
+      "unit_cost": "39000.00",
+      "unit_price": "49999.00",
+      "total_cost_value": "0.00",
+      "total_selling_value": "0.00"
+    }
+  ]
+}
+
+Testing: getStockMovementSummary
+Status: PASSED
+Response: [
+  {
+    "movement_type": "Sale",
+    "total_movements": 300,
+    "total_quantity": 601
+  },
+  {
+    "movement_type": "Purchase",
+    "total_movements": 170,
+    "total_quantity": 1932
+  },
+  {
+    "movement_type": "Return",
+    "total_movements": 40,
+    "total_quantity": 40
+  },
+  {
+    "movement_type": "Damage",
+    "total_movements": 5,
+    "total_quantity": 5
+  },
+  {
+    "movement_type": "Adjustment",
+    "total_movements": 5,
+    "total_quantity": 5
+  }
+]
+
+Testing: getPurchaseSummary
+Status: PASSED
+Response: {
+  "total_purchase_orders": 100,
+  "total_purchase_value": "108100160.00",
+  "average_purchase_order_value": "1081001.600000000000",
+  "status_breakdown": [
+    {
+      "status": "Received",
+      "total_orders": 60,
+      "total_amount": "61727360.00"
+    },
+    {
+      "status": "Ordered",
+      "total_orders": 10,
+      "total_amount": "15152200.00"
+    },
+    {
+      "status": "Pending",
+      "total_orders": 10,
+      "total_amount": "14401200.00"
+    },
+    {
+      "status": "Partially Received",
+      "total_orders": 10,
+      "total_amount": "9073800.00"
+    },
+    {
+      "status": "Approved",
+      "total_orders": 10,
+      "total_amount": "7745600.00"
+    }
+  ]
+}
+
+Testing: getVendorPurchases
+Status: PASSED
+Response: [
+  {
+    "vendor_id": "3b12e61d-aa1c-47e9-beb7-fee6c3a5aeda",
+    "vendor_name": "SanDisk Distribution",
+    "total_orders": 6,
+    "total_purchase_value": "10531350.00",
+    "average_order_value": "1755225.000000000000"
+  },
+  {
+    "vendor_id": "1a9c397d-eec7-42ad-8af6-4be5b6622c39",
+    "vendor_name": "TP Link Distribution",
+    "total_orders": 6,
+    "total_purchase_value": "9999850.00",
+    "average_order_value": "1666641.666666666667"
+  },
+  {
+    "vendor_id": "98b02168-4502-4b13-ae9d-e203ae193e4f",
+    "vendor_name": "Sony Electronics Wholesale",
+    "total_orders": 6,
+    "total_purchase_value": "8915000.00",
+    "average_order_value": "1485833.333333333333"
+  },
+  {
+    "vendor_id": "b042cd24-d1e6-4830-a07b-1fa865123015",
+    "vendor_name": "JBL Audio Distributors",
+    "total_orders": 7,
+    "total_purchase_value": "7873550.00",
+    "average_order_value": "1124792.857142857143"
+  },
+  {
+    "vendor_id": "63a3eb2b-42aa-4157-a597-291ce5c0a25a",
+    "vendor_name": "Boat Lifestyle Distribution",
+    "total_orders": 7,
+    "total_purchase_value": "7615650.00",
+    "average_order_value": "1087950.000000000000"
+  },
+  {
+    "vendor_id": "c1bc07da-2943-41dc-809a-0a693ff94162",
+    "vendor_name": "Nikon Distribution India",
+    "total_orders": 7,
+    "total_purchase_value": "7548130.00",
+    "average_order_value": "1078304.285714285714"
+  },
+  {
+    "vendor_id": "7638f98b-722f-4089-b76f-ae52fec4aef2",
+    "vendor_name": "LG Electronics Supplies",
+    "total_orders": 7,
+    "total_purchase_value": "6986600.00",
+    "average_order_value": "998085.714285714286"
+  },
+  {
+    "vendor_id": "e3b9c35e-3cb1-4c59-b158-9d08f35ad4fc",
+    "vendor_name": "Western Digital Supplies",
+    "total_orders": 6,
+    "total_purchase_value": "6875990.00",
+    "average_order_value": "1145998.333333333333"
+  },
+  {
+    "vendor_id": "c827ae1d-cc5f-4477-bfbc-b7c42550f3b1",
+    "vendor_name": "Lenovo Wholesale India",
+    "total_orders": 7,
+    "total_purchase_value": "6472850.00",
+    "average_order_value": "924692.857142857143"
+  },
+  {
+    "vendor_id": "ca136edc-5d37-4d20-84e2-fcff9c6cf069",
+    "vendor_name": "Samsung Distribution India",
+    "total_orders": 6,
+    "total_purchase_value": "6281500.00",
+    "average_order_value": "1046916.666666666667"
+  },
+  {
+    "vendor_id": "bb226a23-5349-439b-9c60-a50a9273035b",
+    "vendor_name": "HP Electronics Distribution",
+    "total_orders": 7,
+    "total_purchase_value": "6211800.00",
+    "average_order_value": "887400.000000000000"
+  },
+  {
+    "vendor_id": "40728b38-df0d-4efc-ac2c-362375d408c1",
+    "vendor_name": "Logitech India Wholesale",
+    "total_orders": 7,
+    "total_purchase_value": "6046100.00",
+    "average_order_value": "863728.571428571429"
+  },
+  {
+    "vendor_id": "89eb75c2-3bfb-4309-b47e-049eac519f2f",
+    "vendor_name": "Dell India Supplies",
+    "total_orders": 7,
+    "total_purchase_value": "6005090.00",
+    "average_order_value": "857870.000000000000"
+  },
+  {
+    "vendor_id": "bdebe289-fa9b-4954-8ce8-966eaa4411d9",
+    "vendor_name": "Canon India Wholesale",
+    "total_orders": 7,
+    "total_purchase_value": "5886150.00",
+    "average_order_value": "840878.571428571429"
+  },
+  {
+    "vendor_id": "78f5c724-5192-43ba-a89c-4c7c142fa139",
+    "vendor_name": "Apple Authorized Distributor",
+    "total_orders": 7,
+    "total_purchase_value": "4850550.00",
+    "average_order_value": "692935.714285714286"
+  }
+]
+
+Testing: getExpenseSummary
+Status: PASSED
+Response: {
+  "total_expense_records": 60,
+  "total_expense_amount": "1717675.00",
+  "average_expense_amount": "28627.916666666667",
+  "category_breakdown": [
+    {
+      "expense_category": "Salaries",
+      "total_records": 12,
+      "total_amount": "1032750.00"
+    },
+    {
+      "expense_category": "Rent",
+      "total_records": 12,
+      "total_amount": "421750.00"
+    },
+    {
+      "expense_category": "Marketing",
+      "total_records": 12,
+      "total_amount": "143400.00"
+    },
+    {
+      "expense_category": "Electricity",
+      "total_records": 12,
+      "total_amount": "102000.00"
+    },
+    {
+      "expense_category": "Internet",
+      "total_records": 12,
+      "total_amount": "17775.00"
+    }
+  ]
+}
+
+Testing: getRefundSummary
+Status: PASSED
+Response: {
+  "total_refund_records": 30,
+  "total_refund_amount": "4583917.23",
+  "average_refund_amount": "152797.241000000000",
+  "status_breakdown": [
+    {
+      "refund_status": "Completed",
+      "total_refunds": 30,
+      "total_amount": "4583917.23"
+    }
+  ],
+  "reason_breakdown": [
+    {
+      "refund_reason": "Damaged product",
+      "total_refunds": 10,
+      "total_amount": "1605377.13"
+    },
+    {
+      "refund_reason": "Customer requested refund",
+      "total_refunds": 10,
+      "total_amount": "1569253.65"
+    },
+    {
+      "refund_reason": "Product returned by customer",
+      "total_refunds": 10,
+      "total_amount": "1409286.45"
+    }
+  ]
+}
+
+Testing: Invalid Business ID
+Status: PASSED - Zod rejected invalid ID
+
+Testing: Unknown Tool Name
+Status: PASSED - Unknown tool rejected
+
+======================================
+ FINAL TEST SUMMARY
+======================================
+Valid tool tests: 15
+Negative tests: 2
+Total tests: 17
+Passed: 17
+Failed: 0
+
+Database connection pool closed.
+
+E:\AI-Business-Assistant-Agent\backend>
+
+
+We have now completed three important verification stages:
+1. 15/15 agent tools execute successfully.
+2. 2/2 negative tests correctly reject invalid requests.
+3. 15/15 Gemini function declarations are registered and match the executor names.

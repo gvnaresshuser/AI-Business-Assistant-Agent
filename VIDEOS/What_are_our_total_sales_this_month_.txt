@@ -1,0 +1,30 @@
+What are our total sales this month?
+====================================
+
+[09:36 am] You:
+What are our total sales this month?
+
+[09:36 am] AI Assistant:
+Here is the monthly sales breakdown based on your business records:
+
+### **Latest Month (October 2026)**
+* **Total Sales Revenue:** ₹2,48,74,340.68
+* **Total Sales Orders:** 124
+* **Average Order Value (AOV):** ₹2,00,599.52
+
+---
+
+### **Recent Monthly Performance Summary**
+
+| Month | Total Orders | Total Sales Revenue (₹) | Average Order Value (₹) |
+| :--- | :---: | :---: | :---: |
+| **October 2026** | 124 | ₹2,48,74,340.68 | ₹2,00,599.52 |
+| **September 2026** | 125 | ₹2,56,87,542.83 | ₹2,05,500.34 |
+| **August 2026** | 129 | ₹2,46,71,764.72 | ₹1,91,253.99 |
+| **July 2026** | 124 | ₹2,53,48,405.96 | ₹2,04,422.63 |
+| **June 2026** | 125 | ₹2,54,19,066.41 | ₹2,03,352.53 |
+| **May 2026** | 129 | ₹2,62,63,477.60 | ₹2,03,592.85 |
+
+### **Key Insights:**
+* **Consistent Performance:** Monthly sales remain strong and consistent, averaging around ₹2.45 Cr to ₹2.62 Cr per month.
+* **Stable AOV:** Average order value stays high at around ₹2,00,000 per order, reflecting high-value electronics transactions.

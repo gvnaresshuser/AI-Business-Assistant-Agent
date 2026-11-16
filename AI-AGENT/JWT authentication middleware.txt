@@ -1,0 +1,89 @@
+JWT authentication middleware
+Once you've rotated the secret, we'll create:
+
+backend/src/middleware/auth.middleware.ts
+
+It will:
+- Read the JWT from the HTTP-only cookie.
+- Verify the JWT signature and expiry.
+- Extract userId, businessId, roleId and roleName.
+- Attach the authenticated identity to the Express request.
+- Reject unauthenticated requests with HTTP 401.
+
+Create authentication middleware
+Create this file:
+
+backend/src/middleware/auth.middleware.ts
+
+Your JWT authentication middleware is now compiling successfully.
+Step 4.11 – Completed
+We now have:
+- JWT signature verification.
+- Token expiration checking.
+- HTTP-only cookie reading.
+- User ID extraction.
+- Business ID extraction.
+- Role ID and role name extraction.
+- Authentication failure handling with HTTP 401.
+
+
+
+Create a role authorization middleware
+Authentication answers who is logged in?
+
+Authorization answers what is that user allowed to do?
+
+We'll create a reusable middleware to restrict APIs by role.
+
+Create:
+
+backend/src/middleware/authorizeRole.middleware.ts
+
+Create the current-user endpoint (/api/auth/me)
+
+Test authentication in Postman
+We'll perform two tests.
+Test 1: Access with login cookie
+1. Open Postman.
+2. Select GET.
+3. Enter:
+http://localhost:5000/api/auth/me
+
+
+4. Make sure the access_token cookie from your latest login is available for localhost.
+5. Click Send.
+
+{
+  "success": true,
+  "message": "Authenticated user retrieved successfully",
+  "user": {
+    "userId": "bba6574d-6aec-4165-9211-3894a7afacc4",
+    "businessId": "deb3affe-4468-4c75-9125-187376f1b0f9",
+    "roleId": "08816e41-7653-423b-ba0b-4d7efaedbf26",
+    "roleName": "Admin"
+  }
+}
+
+Verify unauthorized access
+Now let's confirm that the endpoint rejects requests without a login cookie.
+
+In Postman:
+1. Open the Cookies manager.
+2. Select localhost.
+3. Temporarily remove the access_token cookie.
+4. Send the same request:
+GET http://localhost:5000/api/auth/me
+
+{
+  "success": false,
+  "message": "Authentication required. Please log in."
+}
+
+Authentication testing completed
+Test	Expected	Result
+Login with valid credentials	200	Passed
+Retrieve authenticated user	200	Passed
+Request without cookie	401	Passed
+JWT verification	Valid token accepted	Passed
+
+Connect authentication to the AI Agent
