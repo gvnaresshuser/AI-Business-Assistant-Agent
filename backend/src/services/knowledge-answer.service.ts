@@ -47,7 +47,7 @@ User Question:
 ${question}
 `,
     config: {
-      maxOutputTokens: 800,
+      maxOutputTokens: 2048,
       temperature: 0.2,
       responseMimeType: "application/json",
       responseSchema: {

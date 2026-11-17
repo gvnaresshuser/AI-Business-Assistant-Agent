@@ -12,6 +12,24 @@ What is the replacement policy for defective electronic products?
 Are there any conditions or exclusions under which the warranty becomes invalid?
 What should a customer do if a product develops a problem during the warranty period?
 
+-----------------------------------------------------
+Ask Your Business Knowledge
+Ask questions based on your uploaded business documents.
+
+What should a customer do if a product develops a problem during the warranty period?
+Ask AI
+AI Answer
+The actions a customer must take depend on the relevant policy document, as there are conflicting procedures across the sources: 1. Under the Electronics Store Warranty Policy (Source 1), customers must provide their original purchase invoice and submit warranty claims through an authorised service centre. 2. Under the Product Warranty Policy – Demo Electronics Store (Source 2), customers can initiate warranty claims by contacting the customer support team and providing their original purchase invoice. 3. Under sample-business-policy.txt, sample-business-policy.docx, and sample-business-policy.pdf (Sources 3, 4, and 5), customers must provide an original invoice or valid order number and contact support@gvretailsolutions.example with their order number, product model, and a short description of the issue.
+
+Sources
+Electronics Store Warranty Policy
+
+Chunk: 0 | Similarity: 68.35%
+
+Product Warranty Policy
+
+Chunk: 0 | Similarity: 68.07%
+-----------------------------------------------------
 
 SELECT
     business_id,
